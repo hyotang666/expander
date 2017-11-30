@@ -1,5 +1,3 @@
-(in-package :cl-user)
-(defpackage :expander.asd(:use :cl :asdf))
-(in-package :expander.asd)
+; vim: ft=lisp et
 (defsystem :expander
   :components((:file "expand")))

@@ -3,110 +3,137 @@
   (:export :expand))
 (in-package :expander)
 
-#+ecl ; environment is special, so we can not support it.
-      ; but without macrolet which has &whole and &environment,
-      ; EXPEND works fine. so...
-(warn "EXPAND does not support ~A."(lisp-implementation-type))
-
 (eval-when(:compile-toplevel :load-toplevel :execute)
   (defmacro prototype(name param-types return-types)
-    `(declaim(ftype(function ,param-types ,return-types),name)))
+    `(DECLAIM(FTYPE(FUNCTION ,param-types ,return-types),name)))
 
   (defmacro get-env(&environment env)
-    env))
+    `',env))
 
-(prototype expand(T &optional list)T)
+(prototype expand(T &optional T)T)
 (defun expand(sexp &optional environment)
-  "Expand all of macro, macrolet, symbol-macro and symbol-macrolet."
   (etypecase sexp
-    ((or null keyword) sexp)
-    (symbol ; it may symbol-macro, so...
-      (expand-symbol-macro sexp environment))
-    (atom sexp)
-    (list
-      (case(car sexp)
-	#+clisp ; signals an error when expand it out of loop, so...
-	(loop-finish '#.(loop do(return(macroexpand'(loop-finish)(get-env)))))
-	(otherwise
-	  (let((form(macroexpand sexp)))
+    ((AND SYMBOL(NOT(OR BOOLEAN KEYWORD)))
+     ; it may symbol-macro, so...
+     (expand-symbol-macro sexp environment))
+    (ATOM sexp)
+    (LIST (let((form(macroexpand sexp environment)))
 	    ; macro may be expanded into atom directly, so...
 	    (if(atom form)
 	      form
-	      (%expand form environment))))))))
+	      (if(listp(car form)) ; it may just data.
+		form
+		(%expand form environment)))))))
 
-(prototype expand-symbol-macro((and symbol(not null keyword))&optional list)T)
+(prototype expand-symbol-macro((and symbol(not(or null keyword(eql T))))
+			       &optional T)T)
 (defun expand-symbol-macro(symbol &optional environment)
-  (multiple-value-bind(expanded findp)(get-local-expander symbol environment)
-    (if findp ; EXPANDED form may include macro form, so...
-      (expand expanded environment)
-      (multiple-value-bind(result expandedp)(macroexpand symbol)
-	(if(not expandedp)
-	  result ; else symbol-macro may be expanded into atom directly, so...
-	  (if(atom result)
-	    result ; else RESULT may include macro form, so...
-	    (expand result environment)))))))
+  (multiple-value-bind(result expandedp)(macroexpand symbol environment)
+    (if(not expandedp) ; it is just a symbol, so...
+      result ; else symbol-macro may be expanded into atom directly, so...
+      (if(atom result)
+	result ; else RESULT may include macro form, so...
+	(expand result environment)))))
 
-(prototype %expand((and list(not null))list)T)
-(defun %expand(expanded-form environment)
-  (case(car expanded-form)
-    ((quote function) expanded-form) ; ignore
-    ((macrolet)
-     (expand(expand-macrolet expanded-form)))
-    ((symbol-macrolet)
-     `(progn ,@(loop for form in (cddr expanded-form) ; do only its body.
-		     collect(expand form(add-local-expanders(second expanded-form)environment)))))
-    ((labels flet)
-     (destructuring-bind(op binds . body)expanded-form
-       `(,op,(loop for (name params . body) in binds collect
-		   `(,name ,params ,@(loop for elt in body collect
-					   (expand elt environment))))
-	  ,@body)))
-    ((lambda)
-     (destructuring-bind(lambda params . body)expanded-form
-       `(,lambda ,params ,@(loop for elt in body collect
-				 (expand elt environment)))))
-    (otherwise
-      `(,(car expanded-form) ; it may conflicts with symbol-macro.
-	 ,@(loop for form in (cdr expanded-form)
-		 collect(expand form environment))))))
+(defvar *expanders* (make-hash-table :test #'equal))
 
-(prototype add-local-expanders(list list) list)
-(defun add-local-expanders(binds environment)
-  (if(endp binds)
-    environment
-    (add-local-expanders (cdr binds)
-			 (destructuring-bind(name body)(car binds)
-			   (acons name body environment)))))
+(prototype %expand(cons &optional T)T)
+(defun %expand(expanded-form &optional environment)
+  (funcall(get-expander(car expanded-form))
+    expanded-form environment))
 
-(prototype expand-mecrolet((cons(eql macrolet)(cons list t)))
-	   (cons(eql progn)list))
-(defun expand-macrolet(form)
-  (destructuring-bind(macrolet binds . body)form
-    (multiple-value-bind
-      (env expanders)(eval`(,macrolet,(subst '&rest '&body binds)
-			     (let((env(get-env)))
-			       (values env
-				       (loop for name in ',(mapcar #'car binds)
-					     collect
-					     (cons name
-						   (macro-function name env)))))))
-      (labels((rec(sexps)
-		(loop for sexp in sexps collect
-		      (if(atom sexp)
-			sexp
-			(let((op(car sexp)))
-			  (if(find op '(quote function))
-			    sexp
-			    (let((expander(assoc op expanders)))
-			      (if expander
-				(funcall(cdr expander)sexp env)
-				(rec sexp)))))))))
-	`(progn ,@(rec body))))))
+(defun get-expander(key)
+  (gethash key *expanders*
+	   (lambda(form env)
+	     (let((cmf(compiler-macro-function(car form)env)))
+	       (if cmf
+		 (expand(funcall *macroexpand-hook* cmf form env)env)
+		 `(,(car form) ; it may conflicts with symbol-macro.
+		    ,@(loop :for form :in(cdr form)
+			    :collect(expand form env))))))))
 
-(prototype get-local-expander((and symbol(not null keyword))list)
-	   (values list boolean))
-(defun get-local-expander(symbol environment)
-  (let((expander(assoc symbol environment)))
-    (if expander
-      (values(cdr expander)T)
-      (values nil nil))))
+(eval-when(:load-toplevel :compile-toplevel :execute)
+  (defmacro defexpander(name lambda-list &body body)
+    "define expander.
+    syntax: (DEFEXPANDER name lambda-list &BODY body)
+    name = (AND SYMBOL (NOT(OR KEYWORD BOOLEAN)))
+    lambda-list = (form environment)
+    body = S-EXPRESSION*
+    FORM shall whole form which first element is NAME.
+    ENVIRONMENT shall ENVIRONMENT object."
+    `(SETF(GETHASH ',name *EXPANDERS*)
+       (LAMBDA ,lambda-list ,@body))))
+
+(prototype copy-expander(#0=(and symbol (not(or boolean keyword)))#0#)
+	   (function(cons T)T))
+(defun copy-expander(dest src)
+  "copy expander function from src to dest"
+  (setf (gethash dest *expanders*)
+	(the(function(cons T)T)(gethash src *expanders*))))
+
+(defexpander quote(whole env)
+  (declare(ignore env))
+  whole)
+
+(progn . #.(mapcar(lambda(dest)
+		    `(copy-expander ',dest 'quote))
+	     '(go declare)))
+
+(defexpander function(whole env)
+  (destructuring-bind(op a . b)whole
+    (if(symbolp a)
+      (if(eq 'lambda (caar b))
+	`(,op ,a ,@(funcall(get-expander 'lambda)(car b)env))
+	whole)
+      (if(eq 'lambda(car a))
+	`(,op ,(funcall(get-expander 'lambda)a env),@b)
+	whole))))
+
+(defexpander macrolet(whole env)
+  (destructuring-bind(op binds . body)whole
+    (eval`(,op ,binds (EXPAND(EXPAND ',(if(cdr body) ; BODY has some forms,
+					 ; and first form may DECLARE, so...
+					 (cons 'locally body)
+					 (car body))
+				     (GET-ENV))
+			,env)))))
+
+(copy-expander 'symbol-macrolet 'macrolet)
+
+(defexpander let(whole env)
+  (destructuring-bind(op binds . body)whole
+    `(,op,(loop :for elt :in binds
+		:if(symbolp elt):collect elt
+		:else :collect
+		`(,(car elt),(expand(cadr elt)env)))
+       ,@(loop :for form :in body :collect (expand form env)))))
+
+(copy-expander 'let* 'let)
+
+(defexpander flet(whole env)
+  (destructuring-bind(op binds . body)whole
+    `(,op,(loop :for (name params . body):in binds :collect
+		`(,name ,(expand-params params env)
+			,@(loop :for elt :in body :collect
+				(expand elt env))))
+       ,@(loop :for form :in body :collect (expand form env)))))
+
+(defun expand-params(params env)
+  (loop :for param :in params
+	:if (symbolp param) :collect param
+	:else :collect
+	`(,(car param),(expand(cadr param)env)
+	   ,@(when(caddr param)
+	       `(,(caddr param))))))
+
+(copy-expander 'labels 'flet)
+
+(defexpander lambda(whole env)
+  (destructuring-bind(op params . body)whole
+    `(,op ,(expand-params params env)
+	  ,@(loop :for form :in body :collect (expand form env)))))
+
+(defexpander the(whole env)
+  (destructuring-bind(op type form)whole
+    ; TYPE may include AND or OR form, but it is not MACROs.
+    `(,op ,type ,(expand form env))))
