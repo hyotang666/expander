@@ -47,7 +47,10 @@
 	   (lambda(form env)
 	     (let((cmf(compiler-macro-function(car form)env)))
 	       (if cmf
-		 (expand(funcall *macroexpand-hook* cmf form env)env)
+		 (let((new(funcall *macroexpand-hook* cmf form env)))
+		   (if(eq new form)
+		     `(,(car form),@(mapcar #'expand (cdr form)))
+		     (expand new env)))
 		 `(,(car form) ; it may conflicts with symbol-macro.
 		    ,@(loop :for form :in(cdr form)
 			    :collect(expand form env))))))))
