@@ -21,9 +21,12 @@
 	    ; macro may be expanded into atom directly, so...
 	    (if(atom form)
 	      form
-	      (if(listp(car form)) ; it may just data.
-		form
-		(%expand form environment)))))))
+	      (typecase (car form)
+		((cons (eql lambda) *)
+		 `((LAMBDA,(cadar form),@(mapcar #'expand(cddar form)))
+		   ,@(cdr form)))
+		(list form) ; it may just data.
+		(t (%expand form environment))))))))
 
 (prototype expand-symbol-macro((and symbol(not(or null keyword(eql T))))
 			       &optional T)T)
