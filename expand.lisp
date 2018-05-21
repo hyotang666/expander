@@ -75,6 +75,7 @@
   (setf (gethash dest *expanders*)
 	(the(function(cons T)T)(gethash src *expanders*))))
 
+;;;; DEFINITIONS
 (defexpander quote(whole env)
   (declare(ignore env))
   whole)
@@ -141,3 +142,45 @@
   (destructuring-bind(op type form)whole
     ; TYPE may include AND or OR form, but it is not MACROs.
     `(,op ,type ,(expand form env))))
+
+(copy-expander 'return-from 'the)
+
+(defexpander unwind-protect(whole env)
+  (destructuring-bind(op form . cleans)whole
+    `(,op ,(expand form env)
+	  ,@(loop :for clean :in cleans :collect (expand clean env)))))
+
+(defexpander throw(whole env)
+  (destructuring-bind(op tag result)whole
+    `(,op ,(expand tag env)
+	  ,(expand result env))))
+
+(defexpander setq(whole env)
+  (destructuring-bind(op . forms)whole
+    `(,op ,@(loop :for (place form) :on forms :by #'cddr
+		  :collect place :collect (expand form env)))))
+
+(copy-expander 'setf 'setq)
+
+(defexpander if(whole env)
+  (destructuring-bind(op pred then . else)whole
+    `(,op ,(expand pred env)
+	  ,(expand then env)
+	  ,@(when else
+	      `(,(expand (car else)env))))))
+
+(defexpander locally(whole env)
+  (destructuring-bind(op . body)whole
+    `(,op ,@(loop :for form :in body :collect (expand form env)))))
+
+(progn . #.(mapcar (lambda(dest)
+		     `(copy-expander ',dest 'locally))
+		   '(multiple-value-call multiple-value-prog1 tagbody progn progv load-time-value)))
+
+(defexpander eval-when(whole env)
+  (destructuring-bind(op cond . body)whole
+    `(,op ,cond ,@(loop :for form :in body :collect(expand form env)))))
+
+(progn . #.(mapcar (lambda(dest)
+		     `(copy-expander ',dest 'eval-when))
+		   '(catch block)))
