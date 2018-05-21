@@ -6,9 +6,7 @@
 (eval-when(:compile-toplevel :load-toplevel :execute)
   (defmacro prototype(name param-types return-types)
     `(DECLAIM(FTYPE(FUNCTION ,param-types ,return-types),name)))
-
-  (defmacro get-env(&environment env)
-    `',env))
+  )
 
 (prototype expand(T &optional T)T)
 (defun expand(sexp &optional environment)
