@@ -39,10 +39,12 @@
 	result ; else RESULT  may include macro form in its sub-forms.
 	(funcall cont result env)))))
 
+;;; %EXPAND
 (prototype %expand(cons &optional T)T)
-(defun %expand(expanded-form &optional environment)
-  (funcall(get-expander(car expanded-form))
-    expanded-form environment))
+(defun %expand(form &optional environment)
+  (funcall (get-expander(car form))
+	   form environment))
+
 ;;; *SPECIAL-FORM-EXPANDERS*
 (defvar *special-form-expanders* (make-hash-table :test #'equal))
 
