@@ -36,15 +36,16 @@
 	result ; else RESULT may include macro form, so...
 	(expand result environment)))))
 
-(defvar *expanders* (make-hash-table :test #'equal))
 
 (prototype %expand(cons &optional T)T)
 (defun %expand(expanded-form &optional environment)
   (funcall(get-expander(car expanded-form))
     expanded-form environment))
+;;; *SPECIAL-FORM-EXPANDERS*
+(defvar *special-form-expanders* (make-hash-table :test #'equal))
 
 (defun get-expander(key)
-  (gethash key *expanders*
+  (gethash key *special-form-expanders*
 	   (lambda(form env)
 	     (let((cmf(compiler-macro-function(car form)env)))
 	       (if cmf
@@ -56,6 +57,7 @@
 		    ,@(loop :for form :in(cdr form)
 			    :collect(expand form env))))))))
 
+;;;; DSL
 (eval-when(:load-toplevel :compile-toplevel :execute)
   (defmacro defexpander(name lambda-list &body body)
     "define expander.
@@ -65,15 +67,15 @@
     body = S-EXPRESSION*
     FORM shall whole form which first element is NAME.
     ENVIRONMENT shall ENVIRONMENT object."
-    `(SETF(GETHASH ',name *EXPANDERS*)
+    `(SETF(GETHASH ',name *SPECIAL-FORM-EXPANDERS*)
        (LAMBDA ,lambda-list ,@body))))
 
 (prototype copy-expander(#0=(and symbol (not(or boolean keyword)))#0#)
 	   (function(cons T)T))
 (defun copy-expander(dest src)
   "copy expander function from src to dest"
-  (setf (gethash dest *expanders*)
-	(the(function(cons T)T)(gethash src *expanders*))))
+  (setf (gethash dest *special-form-expanders*)
+	(the(function(cons T)T)(gethash src *special-form-expanders*))))
 
 ;;;; DEFINITIONS
 (defexpander quote(whole env)
