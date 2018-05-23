@@ -26,7 +26,7 @@
 		(list form) ; it may just data.
 		(t (%expand form environment))))))))
 
-(prototype expand-symbol-macro((and symbol(not(or null keyword(eql T))))
+(prototype expand-symbol-macro((AND SYMBOL (NOT (OR KEYWORD BOOLEAN)))
 			       &optional T)T)
 (defun expand-symbol-macro(symbol &optional environment)
   (multiple-value-bind(result expandedp)(macroexpand symbol environment)
