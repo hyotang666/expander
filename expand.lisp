@@ -8,34 +8,36 @@
     `(DECLAIM(FTYPE(FUNCTION ,param-types ,return-types),name)))
   )
 
+;;;; EXPAND
 (prototype expand(T &optional T)T)
-(defun expand(sexp &optional environment)
-  (etypecase sexp
+(defun expand(form &optional environment)
+  (etypecase form
     ((AND SYMBOL(NOT(OR BOOLEAN KEYWORD)))
-     ; it may symbol-macro, so...
-     (expand-symbol-macro sexp environment))
-    (ATOM sexp)
-    (LIST (let((form(macroexpand sexp environment)))
-	    ; macro may be expanded into atom directly, so...
-	    (if(atom form)
-	      form
-	      (typecase (car form)
-		((cons (eql lambda) *)
-		 `((LAMBDA,(cadar form),@(mapcar #'expand(cddar form)))
-		   ,@(cdr form)))
-		(list form) ; it may just data.
-		(t (%expand form environment))))))))
+     ;; it may symbol-macro, so...
+     (expand-symbol-macro form environment))
+    (ATOM form)
+    (LIST (typecase (car form)
+	    ((cons (eql lambda) *)
+	     `((LAMBDA,(cadar form),@(mapcar (lambda(sub-form)
+					       (expand sub-form environment))
+					     (cddar form)))
+	       ,@(cdr form)))
+	    (list form) ; it may just data.
+	    (t (%expand form environment))))))
 
 (prototype expand-symbol-macro((AND SYMBOL (NOT (OR KEYWORD BOOLEAN)))
 			       &optional T)T)
-(defun expand-symbol-macro(symbol &optional environment)
-  (multiple-value-bind(result expandedp)(macroexpand symbol environment)
-    (if(not expandedp) ; it is just a symbol, so...
-      result ; else symbol-macro may be expanded into atom directly, so...
-      (if(atom result)
-	result ; else RESULT may include macro form, so...
-	(expand result environment)))))
+(defun expand-symbol-macro(form &optional environment)
+  (call-with-macroexpand-check form environment #'%expand))
 
+;; CALL-WITH-MACROEXPAND-CHECK
+(defun call-with-macroexpand-check(form env cont)
+  (multiple-value-bind(result expandedp)(macroexpand form env)
+    (if(not expandedp)
+      result ; else may be expanded into atom directly.
+      (if(atom result)
+	result ; else RESULT  may include macro form in its sub-forms.
+	(funcall cont result env)))))
 
 (prototype %expand(cons &optional T)T)
 (defun %expand(expanded-form &optional environment)
@@ -46,16 +48,24 @@
 
 (defun get-expander(key)
   (gethash key *special-form-expanders*
+	   ;; As default expander. Special forms are never comes.
 	   (lambda(form env)
 	     (let((cmf(compiler-macro-function(car form)env)))
-	       (if cmf
+	       (if(null cmf)
+		 (call-with-macroexpand-check form env #'expand-sub-form)
 		 (let((new(funcall *macroexpand-hook* cmf form env)))
-		   (if(eq new form)
-		     `(,(car form),@(mapcar #'expand (cdr form)))
-		     (expand new env)))
-		 `(,(car form) ; it may conflicts with symbol-macro.
-		    ,@(loop :for form :in(cdr form)
-			    :collect(expand form env))))))))
+		   (if(not(eq new form))
+		     (expand new env)
+		     ;; else compiler macro may be defined on macro.
+		     (if(macro-function(car form))
+		       (expand(macroexpand form env)env)
+		       (expand-sub-form form env)))))))))
+
+(defun expand-sub-form(form env)
+  `(,(car form)
+     ,@(mapcar (lambda(sub-form)
+		 (expand sub-form env))
+	       (cdr form))))
 
 ;;;; DSL
 (eval-when(:load-toplevel :compile-toplevel :execute)
