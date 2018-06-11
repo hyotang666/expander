@@ -32,12 +32,21 @@
 
 ;; CALL-WITH-MACROEXPAND-CHECK
 (defun call-with-macroexpand-check(form env cont)
-  (multiple-value-bind(result expandedp)(macroexpand form env)
+  (multiple-value-bind(result expandedp)(macroexpand% form env)
     (if(not expandedp)
       result ; else may be expanded into atom directly.
       (if(atom result)
 	result ; else RESULT  may include macro form in its sub-forms.
 	(funcall cont result env)))))
+
+;; MACROEXPAND%
+(defun macroexpand%(form env)
+  (multiple-value-bind(new expanded?)(macroexpand-1 form env)
+    (if expanded?
+      (if (eq form new) ; &whole works.
+	new
+	(macroexpand% new env))
+      new)))
 
 ;;; %EXPAND
 (prototype %expand(cons &optional T)T)
@@ -60,7 +69,7 @@
 		     (expand new env)
 		     ;; else compiler macro may be defined on macro.
 		     (if(macro-function(car form))
-		       (expand(macroexpand form env)env)
+		       (expand(macroexpand% form env)env)
 		       (expand-sub-form form env)))))))))
 
 (defun expand-sub-form(form env)
