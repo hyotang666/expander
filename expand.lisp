@@ -160,8 +160,8 @@
 
 (defexpander lambda(whole env)
   (destructuring-bind(op params . body)whole
-    `(,op ,(expand-params params env)
-	  ,@(loop :for form :in body :collect (expand form env)))))
+    `#'(,op ,(expand-params params env)
+	    ,@(loop :for form :in body :collect (expand form env)))))
 
 (defexpander the(whole env)
   (destructuring-bind(op type form)whole
