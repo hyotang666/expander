@@ -115,7 +115,7 @@
 	`(,op ,a ,@(funcall(get-expander 'lambda)(car b)env))
 	whole)
       (if(eq 'lambda(car a))
-	`(,op ,(funcall(get-expander 'lambda)a env),@b)
+	(funcall(get-expander 'lambda)a env)
 	whole))))
 
 (defexpander macrolet(whole env)
