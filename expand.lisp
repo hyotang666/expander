@@ -109,11 +109,10 @@
 	     '(go declare)))
 
 (defexpander function(whole env)
-  (destructuring-bind(op a . b)whole
+  (destructuring-bind(op a)whole
+    (declare(ignore op))
     (if(symbolp a)
-      (if(eq 'lambda (caar b))
-	`(,op ,a ,@(funcall(get-expander 'lambda)(car b)env))
-	whole)
+      whole
       (if(eq 'lambda(car a))
 	(funcall(get-expander 'lambda)a env)
 	whole))))
