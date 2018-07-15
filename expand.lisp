@@ -32,15 +32,6 @@
 (defun expand-symbol-macro(form &optional environment)
   (call-with-macroexpand-check form environment #'%expand))
 
-;; CALL-WITH-MACROEXPAND-CHECK
-(defun call-with-macroexpand-check(form env cont)
-  (multiple-value-bind(result expandedp)(macroexpand% form env)
-    (if(not expandedp)
-      result ; else may be expanded into atom directly.
-      (if(atom result)
-	result ; else RESULT  may include macro form in its sub-forms.
-	(funcall cont result env)))))
-
 ;; MACROEXPAND%
 (defun macroexpand%(form env)
   (multiple-value-bind(new expanded?)(macroexpand-1 form env)
@@ -58,6 +49,14 @@
 
 ;;; *SPECIAL-FORM-EXPANDERS*
 (defvar *special-form-expanders* (make-hash-table :test #'equal))
+
+;; CALL-WITH-MACROEXPAND-CHECK
+(defun call-with-macroexpand-check(form env cont)
+  (let((result (macroexpand% form env)))
+    (if(atom result) ; may be expanded into atom directly.
+      result ; else RESULT  may include macro form in its sub-forms.
+      (funcall (gethash (car result) *special-form-expanders* cont)
+	       result env))))
 
 (defun get-expander(key)
   (gethash key *special-form-expanders*
