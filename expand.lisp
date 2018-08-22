@@ -19,11 +19,9 @@
      (expand-symbol-macro form environment))
     (ATOM form)
     (LIST (typecase (car form)
-	    ((cons (eql lambda) *)
-	     `((LAMBDA,(cadar form),@(mapcar (lambda(sub-form)
-					       (expand sub-form environment))
-					     (cddar form)))
-	       ,@(cdr form)))
+	    ((cons (eql lambda) *) ; ((lambda()...)...)
+	     `((LAMBDA,(cadar form),@(expand-sub-forms (cddar form)environment))
+	       ,@(expand-sub-forms (cdr form)environment)))
 	    (list form) ; it may just data.
 	    (t (%expand form environment))))))
 
@@ -75,9 +73,12 @@
 
 (defun expand-sub-form(form env)
   `(,(car form)
-     ,@(mapcar (lambda(sub-form)
-		 (expand sub-form env))
-	       (cdr form))))
+     ,@(expand-sub-forms (cdr form)env)))
+
+(defun expand-sub-forms(sub-forms env)
+  (mapcar (lambda(sub-form)
+	    (expand sub-form env))
+	  sub-forms))
 
 ;;;; DSL
 (eval-when(:load-toplevel :compile-toplevel :execute)
