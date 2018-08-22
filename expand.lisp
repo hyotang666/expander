@@ -53,8 +53,11 @@
   (let((result (macroexpand% form env)))
     (if(atom result) ; may be expanded into atom directly.
       result ; else RESULT  may include macro form in its sub-forms.
-      (funcall (gethash (car result) *special-form-expanders* cont)
-	       result env))))
+      (if(typep (car result) '(cons (eql lambda)*))
+	`((LAMBDA,(cadar result),@(expand-sub-forms (cddar result)env))
+	  ,@(expand-sub-forms (cdr result)env))
+	(funcall (gethash (car result) *special-form-expanders* cont)
+		 result env)))))
 
 (defun get-expander(key)
   (gethash key *special-form-expanders*
