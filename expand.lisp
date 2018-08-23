@@ -243,7 +243,7 @@
       (if(typep (car result) '(cons (eql lambda)*))
 	`((LAMBDA,(cadar result),@(expand-sub-forms (cddar result)env))
 	  ,@(expand-sub-forms (cdr result)env))
-	(funcall (gethash (car result) *expandtable* cont)
+	(funcall (get-expander (car result) cont)
 		 result env)))))
 
 (defun |default-expander|(form env)
