@@ -67,7 +67,7 @@
       (invoke-restart restart))))
 
 ;;;; FIND-EXPANDTABLE
-(defun find-expandtable(name &optional errorp)
+(defun find-expandtable(name &optional (errorp t))
   (or (gethash name *expandtables*)
       (when errorp
 	(error 'missing-expandtable :name name))))
