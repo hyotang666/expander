@@ -32,6 +32,7 @@
 ;;;; DEFEXPANDTABLE
 (defmacro defexpandtable(name &rest clause)
   ;; Trivial syntax checks
+  (check-type name symbol)
   (assert (every #'listp clause))
   (dolist(c clause)
     (assert (listp c))
