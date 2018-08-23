@@ -57,12 +57,14 @@
 
 ;;;; RESTARTS
 (defun use-prev(condition)
-  (declare(ignore condition))
-  (invoke-restart 'use-prev))
+  (let((restart(find-restart 'use-prev condition)))
+    (when restart
+      (invoke-restart restart))))
 
 (defun use-next(condition)
-  (declare(ignore condition))
-  (invoke-restart 'use-next))
+  (let((restart(find-restart 'use-next condition)))
+    (when restart
+      (invoke-restart restart))))
 
 ;;;; FIND-EXPANDTABLE
 (defun find-expandtable(name &optional errorp)
