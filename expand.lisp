@@ -14,7 +14,7 @@
     ;; Restarts
     #:use-prev #:use-next
     ;; Helpers
-    #:find-expandtable #:make-expandtable #:expand-sub-forms
+    #:find-expandtable #:make-expandtable #:expand-sub-form #:expand*
     )
   )
 (in-package :expander)
@@ -120,9 +120,9 @@
 		:if(symbolp elt):collect elt
 		:else :collect
 		`(,(car elt),(expand(cadr elt)env)))
-       ,@(expand-sub-forms body env))))
+       ,@(expand* body env))))
 
-(defun expand-sub-forms(sub-forms env)
+(defun expand*(sub-forms env)
   (mapcar (lambda(sub-form)
 	    (expand sub-form env))
 	  sub-forms))
@@ -133,7 +133,7 @@
 		`(,name ,(expand-params params env)
 			,@(loop :for elt :in body :collect
 				(expand elt env))))
-       ,@(expand-sub-forms body env))))
+       ,@(expand* body env))))
 
 (defun expand-params(params env)
   (loop :for param :in params
@@ -146,7 +146,7 @@
 (defun |lambda-expander|(whole env)
   (destructuring-bind(op params . body)whole
     `#'(,op ,(expand-params params env)
-	    ,@(expand-sub-forms body env))))
+	    ,@(expand* body env))))
 
 (defun |the-expander|(whole env)
   (destructuring-bind(op type form)whole
@@ -156,7 +156,7 @@
 (defun |unwind-protect-expander|(whole env)
   (destructuring-bind(op form . cleans)whole
     `(,op ,(expand form env)
-	  ,@(expand-sub-forms cleans env))))
+	  ,@(expand* cleans env))))
 
 (defun |throw-expander|(whole env)
   (destructuring-bind(op tag result)whole
@@ -177,11 +177,11 @@
 
 (defun |locally-expander|(whole env)
   (destructuring-bind(op . body)whole
-    `(,op ,@(expand-sub-forms body env))))
+    `(,op ,@(expand* body env))))
 
 (defun |eval-when-expander|(whole env)
   (destructuring-bind(op cond . body)whole
-    `(,op ,cond ,@(expand-sub-forms body env))))
+    `(,op ,cond ,@(expand* body env))))
 
 ;;;; Standard expandtable
 (defexpandtable standard
@@ -213,8 +213,8 @@
     (ATOM form)
     (LIST (typecase (car form)
 	    ((cons (eql lambda) *) ; ((lambda()...)...)
-	     `((LAMBDA,(cadar form),@(expand-sub-forms (cddar form)environment))
-	       ,@(expand-sub-forms (cdr form)environment)))
+	     `((LAMBDA,(cadar form),@(expand* (cddar form)environment))
+	       ,@(expand* (cdr form)environment)))
 	    (list form) ; it may just data.
 	    (t (%expand form environment))))))
 
@@ -244,8 +244,8 @@
     (if(atom result) ; may be expanded into atom directly.
       result ; else RESULT  may include macro form in its sub-forms.
       (if(typep (car result) '(cons (eql lambda)*))
-	`((LAMBDA,(cadar result),@(expand-sub-forms (cddar result)env))
-	  ,@(expand-sub-forms (cdr result)env))
+	`((LAMBDA,(cadar result),@(expand* (cddar result)env))
+	  ,@(expand* (cdr result)env))
 	(funcall (get-expander (car result) cont)
 		 result env)))))
 
@@ -266,4 +266,4 @@
 
 (defun expand-sub-form(form env)
   `(,(car form)
-     ,@(expand-sub-forms (cdr form)env)))
+     ,@(expand* (cdr form)env)))
