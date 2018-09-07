@@ -16,12 +16,15 @@
     #:defexpandtable
     ;; Special variable
     #:*expandtable* ; current expandtable.
+    #:*default-expander*
     ;; Conditions
     #:expander-error #:missing-expandtable #:expander-conflict
     ;; Restarts
     #:use-prev #:use-next
     ;; Helpers
     #:find-expandtable #:make-expandtable #:expand-sub-form #:expand* #:call
+    ;; Walker
+    #:walk-sublis
     )
   )
 (in-package :expander)
@@ -352,9 +355,21 @@
 	    (expand(macroexpand form env)env)
 	    (expand-sub-form form env)))))))
 
-(defun get-expander(key &optional(default '|default-expander|))
-  (gethash key *expandtable* default))
+(defvar *default-expander* '|default-expander|)
+
+(defun get-expander(key &optional(*default-expander* *default-expander*))
+  (gethash key *expandtable* *default-expander*))
 
 (defun expand-sub-form(form env)
   `(,(car form)
      ,@(expand* (cdr form)env)))
+
+;;;; Walker
+(defun walk-sublis(alist form)
+  (let((*default-expander* '|expanded-walk-default|))
+    (expand `(symbol-macrolet ,(loop :for (old . new) :in alist
+				     :collect `(,old ,new))
+			      ,form))))
+
+(defun |expanded-walk-default|(form env)
+  (call-with-macroexpand-check form env #'expand-sub-form))
