@@ -14,7 +14,7 @@
     ;; Restarts
     #:use-prev #:use-next
     ;; Helpers
-    #:find-expandtable #:make-expandtable #:expand-sub-form #:expand*
+    #:find-expandtable #:make-expandtable #:expand-sub-form #:expand* #:call
     )
   )
 (in-package :expander)
@@ -202,6 +202,11 @@
 
 ;;;; *EXPANDTABLE*, current expandtable.
 (defvar *expandtable*(find-expandtable 'standard))
+
+;;; To debug, or to test.
+(defun call(symbol form &optional(name 'standard))
+  (let((*expandtable*(find-expandtable name)))
+    (funcall(get-expander symbol)form nil)))
 
 ;;;; EXPAND
 (prototype expand(T &optional T)T)
