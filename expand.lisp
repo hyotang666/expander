@@ -287,7 +287,7 @@
     `(trace ,@names)))
 
 ;;;; *EXPANDTABLE*, current expandtable.
-(defvar *expandtable*(find-expandtable 'standard))
+(defparameter *expandtable*(find-expandtable 'standard))
 
 ;;; To debug, or to test.
 (defun call(symbol form &optional(name 'standard))
