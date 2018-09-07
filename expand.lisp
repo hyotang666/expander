@@ -4,6 +4,7 @@
     ;; Main api
     #:expand
     )
+  (:shadow #:macroexpand)
   (:import-from #.(or #+sbcl :sb-cltl2
 		      #+ccl :ccl
 		      (error "~A is not supported." (lisp-implementation-type)))
@@ -304,13 +305,13 @@
 (defun expand-symbol-macro(form &optional environment)
   (call-with-macroexpand-check form environment #'%expand))
 
-;; MACROEXPAND%
-(defun macroexpand%(form env)
+;; MACROEXPAND
+(defun macroexpand(form env)
   (multiple-value-bind(new expanded?)(macroexpand-1 form env)
     (if expanded?
       (if (eq form new) ; &whole works.
 	new
-	(macroexpand% new env))
+	(macroexpand new env))
       new)))
 
 ;;; %EXPAND
@@ -321,7 +322,7 @@
 
 ;; CALL-WITH-MACROEXPAND-CHECK
 (defun call-with-macroexpand-check(form env cont)
-  (let((result (macroexpand% form env)))
+  (let((result (macroexpand form env)))
     (if(atom result) ; may be expanded into atom directly.
       result ; else RESULT  may include macro form in its sub-forms.
       (if(typep (car result) '(cons (eql lambda)*))
@@ -339,7 +340,7 @@
 	  (expand new env)
 	  ;; else compiler macro may be defined on macro.
 	  (if(macro-function(car form))
-	    (expand(macroexpand% form env)env)
+	    (expand(macroexpand form env)env)
 	    (expand-sub-form form env)))))))
 
 (defun get-expander(key &optional(default '|default-expander|))
