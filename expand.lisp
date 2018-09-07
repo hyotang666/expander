@@ -277,6 +277,15 @@
   (:add |eval-when-expander| eval-when catch block)
   )
 
+(defmacro trace-expanders(name)
+  (let((table(find-expandtable name))
+       names)
+    (maphash (lambda(symbol function)
+	       (declare(ignore symbol))
+	       (pushnew function names :test #'eq))
+	     table)
+    `(trace ,@names)))
+
 ;;;; *EXPANDTABLE*, current expandtable.
 (defvar *expandtable*(find-expandtable 'standard))
 
