@@ -1,6 +1,10 @@
 ; vim: ft=lisp et
 (in-package :asdf)
 (defsystem :expander
+  :depends-on
+  (
+   "alexandria"
+   )
   :components((:file "expand")))
 
 ;; These two methods below are added by JINGOH.GENERATOR.

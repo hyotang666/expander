@@ -4,6 +4,12 @@
     ;; Main api
     #:expand
     )
+  (:import-from #.(or #+sbcl :sb-cltl2
+		      #+ccl :ccl
+		      (error "~A is not supported." (lisp-implementation-type)))
+		#:augment-environment
+		#:parse-macro
+		#:enclose)
   (:export ; for hackers.
     ;; Main DSL
     #:defexpandtable
@@ -22,9 +28,7 @@
 (eval-when(:compile-toplevel :load-toplevel :execute)
   (defmacro prototype(name param-types return-types)
     `(DECLAIM(FTYPE(FUNCTION ,param-types ,return-types),name)))
-
-  (defmacro get-env(&environment env)
-    `',env))
+  )
 
 #| DSL |#
 (defvar *expandtables* (make-hash-table :test #'eq))
@@ -107,20 +111,71 @@
 
 (defun |macrolet-expander|(whole env)
   (destructuring-bind(op binds . body)whole
-    (eval`(,op ,binds (EXPAND (EXPAND ',(if(cdr body) ; BODY has some forms,
-					  ; and first form may DECLARE, so...
-					  (cons 'locally body)
-					  (car body))
-				      (GET-ENV))
-			      ,env)))))
+    (declare(ignore op))
+    (multiple-value-bind(body decls)(alexandria:parse-body body)
+      (flet((new-env(decls)
+	      (Augment-environment
+		env
+		:macro (mapcar (lambda(bind)
+				 (destructuring-bind(name lambda-list . body)bind
+				   `(,name,(Enclose
+					     (Parse-macro name
+							  lambda-list
+							  body
+							  env)
+					     env))))
+			       binds)
+		:declare (alexandria:mappend #'cdr decls))))
+	(if (cdr body)
+	  `(progn ,(expand* body (new-env decls)))
+	  (expand (car body) (new-env decls)))))))
+
+(defun |symbol-macrolet-expander|(whole env)
+  (destructuring-bind(op binds . body)whole
+    (declare(ignore op))
+    (multiple-value-bind(body decls)(alexandria:parse-body body)
+      (flet((new-env(decls)
+	      (Augment-environment
+		env
+		:symbol-macro binds
+		:declare (alexandria:mappend #'cdr decls))))
+	(if(cdr body)
+	  `(progn ,(expand* body (new-env decls)))
+	  (expand (car body) (new-env decls)))))))
 
 (defun |let-expander|(whole env)
   (destructuring-bind(op binds . body)whole
-    `(,op,(loop :for elt :in binds
-		:if(symbolp elt):collect elt
-		:else :collect
-		`(,(car elt),(expand(cadr elt)env)))
-       ,@(expand* body env))))
+    (multiple-value-bind(body decls)(alexandria:parse-body body)
+      `(,op,(loop :for elt :in binds
+		  :if(symbolp elt):collect elt
+		  :else :collect
+		  `(,(car elt),(expand(cadr elt)env)))
+	 ,@decls
+	 ,@(expand* body (Augment-environment
+			   env
+			   :variable (mapcar #'alexandria:ensure-car binds)
+			   :declare (alexandria:mappend #'cdr decls)))))))
+
+(defun |let*-expander|(whole env)
+  (destructuring-bind(op binds . body)whole
+    (multiple-value-bind(body decls)(alexandria:parse-body body)
+      `(,op ,(loop :for elt :in binds
+		   :if (symbolp elt)
+		   :collect (progn (setf env (Augment-environment
+					       env
+					       :variable (list elt)))
+				   elt)
+		   :else :collect `(,(car elt)
+				     ,(expand (cadr elt)
+					      (setf env (Augment-environment
+							  env
+							  :variable (list (car elt)))))))
+	    ,@decls
+	    ,@(expand* body (if decls
+			      (Augment-environment
+				env
+				:declare (alexandria:mappend #'cdr decls))
+			      env))))))
 
 (defun expand*(sub-forms env)
   (mapcar (lambda(sub-form)
@@ -129,11 +184,29 @@
 
 (defun |flet-expander|(whole env)
   (destructuring-bind(op binds . body)whole
-    `(,op,(loop :for (name params . body):in binds :collect
-		`(,name ,(expand-params params env)
-			,@(loop :for elt :in body :collect
-				(expand elt env))))
-       ,@(expand* body env))))
+    (multiple-value-bind(body decls)(alexandria:parse-body body)
+      `(,op,(loop :for (name params . body):in binds :collect
+		  `(,name ,(expand-params params env)
+			  ,@(loop :for elt :in body :collect
+				  (expand elt env))))
+	 ,@decls
+	 ,@(expand* body (Augment-environment
+			   env
+			   :function (mapcar #'car binds)))))))
+
+(defun |labels-expander|(whole env)
+  (destructuring-bind(op binds . body)whole
+    (multiple-value-bind(body decls)body
+      `(,op ,(loop :for (name params . body) :in binds
+		   :do (setf env (Augment-environment
+				   env
+				   :function (list name)))
+		   :collect `(,name ,(expand-params params env)
+				    ,@(expand* body env)))
+	    ,@decls
+	    ,@(expand* body (Augment-environment
+			      env
+			      :declare (alexandria:mappend #'cdr decls)))))))
 
 (defun expand-params(params env)
   (loop :for param :in params
@@ -187,9 +260,12 @@
 (defexpandtable standard
   (:add |quote-expander| quote go declare)
   (:add |function-expander| function)
-  (:add |macrolet-expander| macrolet symbol-macrolet)
-  (:add |let-expander| let let*)
-  (:add |flet-expander| flet labels)
+  (:add |macrolet-expander| macrolet)
+  (:add |symbol-macrolet-expander| symbol-macrolet)
+  (:add |let-expander| let)
+  (:add |let*-expander| let*)
+  (:add |flet-expander| flet)
+  (:add |labels-expander| labels)
   (:add |lambda-expander| lambda)
   (:add |the-expander| the return-from)
   (:add |unwind-protect-expander| unwind-protect)
