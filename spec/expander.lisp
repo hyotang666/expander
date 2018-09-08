@@ -327,3 +327,7 @@
 (requirements-about list)
 
 #?(call 'list '(list) 'optimize) => NIL
+
+(requirements-about vector :test equalp)
+
+#?(call 'vector '(vector) 'optimize) => #()

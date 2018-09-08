@@ -507,6 +507,11 @@
     (expand-sub-form form env)
     nil))
 
+(defun |vector-expander|(form env)
+  (if(cdr form)
+    (expand-sub-form form env)
+    #()))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -514,5 +519,6 @@
     (:add |append-expander| append)
     (:add |mapcar-expander| mapcar maplist mapcan mapcon)
     (:add |list-expander| list)
+    (:add |vector-expander| vector)
     ))
 
