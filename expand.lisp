@@ -386,7 +386,7 @@
 
 (defun |funcall-expander|(form env)
   (destructuring-bind(op function . args)form
-    (setf function (expander:expand function env))
+    (setf function (expand function env))
     (typecase function
       ((cons (eql function)(cons symbol null))
        `(,(cadr function),@(expand* args env)))
@@ -398,7 +398,7 @@
 	   (let((binds(loop :for var :in lambda-list
 			    :for arg :in args
 			    :unless (eq var arg)
-			    :collect `(,var ,(expander:expand arg env)))))
+			    :collect `(,var ,(expand arg env)))))
 	     (if binds
 	       `(let,binds,@body)
 	       (if(cdr body)
