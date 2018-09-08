@@ -408,6 +408,22 @@
 		 (car body)))))))
       (#.(cons-type-specifier '(constantly *))
        (cadr function))
+      (#.(cons-type-specifier '(let()))
+       (destructuring-bind(let binds . body)function
+	 (multiple-value-bind(body decls)(alexandria:parse-body body)
+	   (let*((syms(alexandria:make-gensym-list(length binds)))
+		 (alist(mapcar #'cons
+			       (mapcar #'alexandria:ensure-car binds)
+			       syms)))
+	     (expand `(,let ,(loop :for sym :in syms
+				   :for bind :in binds
+				   :collect (if(symbolp bind)
+					      sym
+					      `(,sym ,(cadr bind))))
+			    ,@decls
+			    ,@(loop :for form :in (butlast body)
+				    :collect (walk-sublis alist form))
+			    (,op ,(walk-sublis alist (car(last body))),@args)))))))
       (t `(,op ,function ,@(expand* args env))))))
 
 (defun intersectionp(list1 list2 &key (key #'identity)(test #'eql)test-not)

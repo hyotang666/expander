@@ -264,7 +264,7 @@
 
 ;;;; Exceptional-Situations:
 
-(requirements-about optimize :test equal)
+(requirements-about funcall :test equal)
 
 #?(call 'funcall '(funcall #'+ 1 2 3) 'optimize)
 => (+ 1 2 3)
@@ -290,3 +290,7 @@
 
 #?(call 'funcall '(funcall (constantly 0) 1 2 3) 'optimize)
 => 0
+
+#?(call 'funcall '(funcall (let((a 0))(constantly a)) 1 2 3) 'optimize)
+=> (let((a 0)) a)
+,:test jingoh.tester:sexp=
