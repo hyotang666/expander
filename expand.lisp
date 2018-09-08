@@ -502,11 +502,17 @@
 	   nil)))
       (t `(,op ,fun ,@(expand* args env))))))
 
+(defun |list-expander|(form env)
+  (if(cdr form)
+    (expand-sub-form form env)
+    nil))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
     (:add |funcall-expander| funcall)
     (:add |append-expander| append)
     (:add |mapcar-expander| mapcar maplist mapcan mapcon)
+    (:add |list-expander| list)
     ))
 
