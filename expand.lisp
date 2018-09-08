@@ -511,6 +511,22 @@
     (expand-sub-form form env)
     #()))
 
+(defun |concatenate-expander|(form env)
+  (destructuring-bind(op type . rest)form
+    (let*((expanded (remove-if #'alexandria:emptyp
+			       (flatten-nested-op 'concatenate (expand* rest env) :args #'cddr))))
+      (cond
+	((null expanded)
+	 (if(constantp type env)
+	   (coerce nil (introspect-environment:constant-form-value type))
+	   `(coerce nil ,type)))
+	((null(cdr expanded))
+	 `(coerce ,(car expanded) ,type))
+	(t (multiple-value-bind(binds decls prebody args)(sieve-let expanded)
+	     (if(null binds)
+	       `(,op ,type ,@expanded)
+	       (expand `(let,binds,@decls,@prebody (,op ,type ,@args))))))))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -519,5 +535,6 @@
     (:add |mapcar-expander| mapcar maplist mapcan mapcon)
     (:add |list-expander| list)
     (:add |vector-expander| vector)
+    (:add |concatenate-expander| concatenate)
     ))
 

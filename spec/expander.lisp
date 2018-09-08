@@ -331,3 +331,20 @@
 (requirements-about vector :test equalp)
 
 #?(call 'vector '(vector) 'optimize) => #()
+
+(requirements-about concatenate :test equalp)
+
+#?(call 'concatenate '(concatenate 'vector) 'optimize)
+=> #()
+
+#?(call 'concatenate '(concatenate 'vector #() (vector)) 'optimize)
+=> #()
+
+#?(call 'concatenate '(concatenate (intern "VECTOR") nil "") 'optimize)
+=> (coerce nil (intern "VECTOR"))
+
+#?(call 'concatenate '(concatenate 'list (vector)(vector 1 2 3)) 'optimize)
+=> (coerce (vector 1 2 3) 'list)
+
+#?(call 'concatenate '(concatenate 'vector #(1) (concatenate 'list #(2) #(3))) 'optimize)
+=> (concatenate 'vector #(1) #(2) #(3))

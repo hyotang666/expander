@@ -3,6 +3,7 @@
 (defsystem :expander
   :depends-on
   (
+   "introspect-environment"
    "alexandria"
    )
   :components((:file "expand")))
