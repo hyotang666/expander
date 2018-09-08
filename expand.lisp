@@ -516,7 +516,9 @@
 
 (defun |concatenate-expander|(form env)
   (destructuring-bind(op type . rest)form
-    (let*((expanded (remove-if #'alexandria:emptyp
+    (let*((expanded (remove-if (lambda(x)
+				 (and (constantp x env)
+				      (alexandria:emptyp (introspect-environment:constant-form-value x env))))
 			       (flatten-nested-op 'concatenate (expand* rest env) :args #'cddr))))
       (cond
 	((null expanded)
