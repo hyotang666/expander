@@ -423,7 +423,19 @@
       (multiple-value-bind(symbol-macrolet-cadr new-binds)(parse-bubble-binds binds)
 	(multiple-value-call #'values
 	  new-binds
-	  decls
+	  (loop :for declare-form :in decls
+		:collect (cons 'declare (loop :for option :in (cdr declare-form)
+					      :with alist = (mapcar (lambda(x)
+								      (apply #'cons x))
+								    symbol-macrolet-cadr)
+					      :collect (case (car option)
+							 ((ignore ignorable)
+							  (sublis alist (cdr option)))
+							 ((type)
+							  (list* (car option)
+								 (cadr option)
+								 (sublis alist (cddr option))))
+							 (t option)))))
 	  (loop :for body :on body
 		:for form = (walk-sublis symbol-macrolet-cadr (car body))
 		:if(null(cdr body))
