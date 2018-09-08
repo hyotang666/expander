@@ -474,18 +474,26 @@
 (defun sieve-let(args)
   (labels((rec(list &optional binds decls prebody args)
 	    (if(endp list)
-	      (values binds decls prebody (nreverse args))
+	      (values (nreverse binds) decls (nreverse prebody) (nreverse args))
 	      (body (car list)(cdr list)binds decls prebody args)))
 	  (body(arg rest binds-acc decls-acc prebody-acc args)
 	    (if(not(typep arg '#.(cons-type-specifier '(let()))))
-	      (rec rest binds-acc decls-acc prebody-acc (cons arg args))
+	      (let((var(gensym)))
+		(rec rest
+		     (nconc `((,var ,arg)) binds-acc)
+		     decls-acc
+		     prebody-acc
+		     (cons var args)))
 	      (multiple-value-bind(binds decls prebody main)(parse-bubble-let arg)
 		(rec rest
-		     (nconc binds binds-acc)
+		     (nreconc binds binds-acc)
 		     (nconc decls decls-acc)
-		     (nconc prebody prebody-acc)
+		     (nreconc prebody prebody-acc)
 		     (cons main args))))))
-    (rec args)))
+    (if(find-if (lambda(x)(typep x '#.(cons-type-specifier '(let()))))
+		args)
+      (rec args)
+      (values nil nil nil args))))
 
 (defun flatten-nested-op(op expanded &key (args #'cdr))
   (labels((rec(append-args &optional acc)
