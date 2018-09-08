@@ -1,4 +1,5 @@
 (in-package :cl-user)
+#+sbcl(require :sb-cltl2)
 (defpackage :expander(:use :cl)
   (:export ; for light users.
     ;; Main api
@@ -373,3 +374,49 @@
 
 (defun |expanded-walk-default|(form env)
   (call-with-macroexpand-check form env #'expand-sub-form))
+
+;;;; OPTIMIZE table
+(eval-when(:compile-toplevel :load-toplevel :execute)
+  (defun cons-type-specifier(list)
+    (typecase list
+      (null '*)
+      (atom (if (eq '* list)
+	      list
+	      `(eql ,list)))
+      (cons `(cons ,(cons-type-specifier (car list))
+		   ,(cons-type-specifier (cdr list)))))))
+
+(defun |funcall-expander|(form env)
+  (destructuring-bind(op function . args)form
+    (setf function (expander:expand function env))
+    (typecase function
+      ((cons (eql function)(cons symbol null))
+       `(,(cadr function),@(expand* args env)))
+      (#.(cons-type-specifier '#'(lambda()))
+       (destructuring-bind(function(lambda lambda-list . body))function
+	 (declare(ignore function lambda))
+	 (if(intersectionp lambda-list lambda-list-keywords :test #'eq)
+	   `(,op #'(lambda ,lambda-list ,@body) ,@(expand* args env))
+	   (let((binds(loop :for var :in lambda-list
+			    :for arg :in args
+			    :unless (eq var arg)
+			    :collect `(,var ,(expander:expand arg env)))))
+	     (if binds
+	       `(let,binds,@body)
+	       (if(cdr body)
+		 `(locally ,@body)
+		 (car body)))))))
+      (#.(cons-type-specifier '(constantly *))
+       (cadr function))
+      (t `(,op ,function ,@(expand* args env))))))
+
+(defun intersectionp(list1 list2 &key (key #'identity)(test #'eql)test-not)
+  (when test-not (setq test (complement test-not)))
+  (loop :for elt :in list2
+	:thereis (member elt list1 :test test :key key)))
+
+  (defexpandtable optimize
+    (:use standard)
+    (:add |funcall-expander| funcall)
+    ))
+

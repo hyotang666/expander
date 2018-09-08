@@ -264,3 +264,29 @@
 
 ;;;; Exceptional-Situations:
 
+(requirements-about optimize :test equal)
+
+#?(call 'funcall '(funcall #'+ 1 2 3) 'optimize)
+=> (+ 1 2 3)
+
+#?(call 'funcall '(funcall '+ 1 2 3) 'optimize)
+=> (funcall '+ 1 2 3)
+
+#?(call 'funcall '(funcall (lambda(a &optional b)(list a b)) 1 2) 'optimize)
+=> (funcall #'(lambda(a &optional b)(list a b)) 1 2)
+
+#?(call 'funcall '(funcall (lambda(a b)(list a b)) 1 2) 'optimize)
+=> (let((a 1)(b 2))(list a b))
+
+#?(call 'funcall '(funcall (lambda(x)(print x)) x) 'optimize)
+=> (print x)
+
+#?(call 'funcall '(funcall (lambda(x)(print x)(+ x 3)) x) 'optimize)
+=> (locally (print x)(+ x 3))
+
+#?(call 'funcall '(funcall (lambda(x y)(list x y)) 1 y) 'optimize)
+=> (let((x 1))
+     (list x y))
+
+#?(call 'funcall '(funcall (constantly 0) 1 2 3) 'optimize)
+=> 0
