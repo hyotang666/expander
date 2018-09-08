@@ -446,16 +446,15 @@
 
 (defun |append-expander|(form env)
   (destructuring-bind(op . args)form
-    (let((expanded(remove nil (expander:expand* args env))))
+    (let((expanded(remove nil (flatten-nested-op 'append(expand* args env)))))
       (cond
 	((null expanded)nil)
 	((null(cdr expanded))
 	 (car expanded))
-	(t (let((args(flatten-nested-op 'append expanded)))
-	     (multiple-value-bind(binds decls prebody args)(sieve-let args)
-	       (if(null binds)
-		 `(,op ,@args)
-		 (expand `(let ,binds ,@decls ,@prebody (,op ,@args)))))))))))
+	(t (multiple-value-bind(binds decls prebody args)(sieve-let expanded)
+	     (if(null binds)
+	       `(,op ,@args)
+	       (expand `(let ,binds ,@decls ,@prebody (,op ,@args))))))))))
 
 (defun sieve-let(args)
   (labels((rec(list &optional binds decls prebody args)
