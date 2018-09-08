@@ -491,16 +491,18 @@
 (defun |mapcar-expander|(form env)
   (destructuring-bind(op fun . args)form
     (setf fun (expand fun env))
+    (setf args (expand* args env))
     (cond
-      ((member nil args)
+      ((loop :for form :in args
+	     :thereis (member form '(nil 'nil):test #'equal))
        (let((args(remove-if (lambda(x)
-			      (or (null x)
+			      (or (member x '(nil 'nil) :test #'equal)
 				  (constantp x env)))
 			    args)))
 	 (if args
 	   `(progn ,@args nil)
 	   nil)))
-      (t `(,op ,fun ,@(expand* args env))))))
+      (t `(,op ,fun ,@args)))))
 
 (defun |list-expander|(form env)
   (if(cdr form)
