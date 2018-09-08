@@ -366,11 +366,9 @@
      ,@(expand* (cdr form)env)))
 
 ;;;; Walker
-(defun walk-sublis(alist form)
+(defun walk-sublis(binds form)
   (let((*default-expander* '|expanded-walk-default|))
-    (expand `(symbol-macrolet ,(loop :for (old . new) :in alist
-				     :collect `(,old ,new))
-			      ,form))))
+    (expand `(symbol-macrolet ,binds ,form))))
 
 (defun |expanded-walk-default|(form env)
   (call-with-macroexpand-check form env #'expand-sub-form))
@@ -409,27 +407,42 @@
       (#.(cons-type-specifier '(constantly *))
        (cadr function))
       (#.(cons-type-specifier '(let()))
-       (destructuring-bind(let binds . body)function
-	 (multiple-value-bind(body decls)(alexandria:parse-body body)
-	   (let*((syms(alexandria:make-gensym-list(length binds)))
-		 (alist(mapcar #'cons
-			       (mapcar #'alexandria:ensure-car binds)
-			       syms)))
-	     (expand `(,let ,(loop :for sym :in syms
-				   :for bind :in binds
-				   :collect (if(symbolp bind)
-					      sym
-					      `(,sym ,(cadr bind))))
-			    ,@decls
-			    ,@(loop :for form :in (butlast body)
-				    :collect (walk-sublis alist form))
-			    (,op ,(walk-sublis alist (car(last body))),@args)))))))
+       (multiple-value-bind(binds decls prebody main)(parse-bubble-let function)
+	 (expand `(let ,binds ,@decls ,@prebody(,op ,main ,@args)))))
       (t `(,op ,function ,@(expand* args env))))))
 
 (defun intersectionp(list1 list2 &key (key #'identity)(test #'eql)test-not)
   (when test-not (setq test (complement test-not)))
   (loop :for elt :in list2
 	:thereis (member elt list1 :test test :key key)))
+
+(defun parse-bubble-let(let)
+  (destructuring-bind(op binds . body)let
+    (declare(ignore op))
+    (multiple-value-bind(body decls)(alexandria:parse-body body)
+      (multiple-value-bind(symbol-macrolet-cadr new-binds)(parse-bubble-binds binds)
+	(multiple-value-call #'values
+	  new-binds
+	  decls
+	  (loop :for body :on body
+		:for form = (walk-sublis symbol-macrolet-cadr (car body))
+		:if(null(cdr body))
+		:return (values prebody form)
+		:else :collect form :into prebody))))))
+
+(defun parse-bubble-binds(binds)
+  (labels((rec(binds &optional sm-cadr new-binds)
+	    (if (endp binds)
+	      (values (nreverse sm-cadr)(nreverse new-binds))
+	      (body(car binds)(cdr binds)sm-cadr new-binds)))
+	  (body(bind rest sm-cadr new-binds)
+	    (if(symbolp bind)
+	      (let((gensym(gensym(symbol-name bind))))
+		(rec rest (cons `(,bind ,gensym)sm-cadr)(cons gensym new-binds)))
+	      (let((gensym(gensym(symbol-name(car bind)))))
+		(rec rest (cons `(,(car bind),gensym)sm-cadr)
+		     (cons `(,gensym ,(cadr bind))new-binds))))))
+    (rec binds)))
 
   (defexpandtable optimize
     (:use standard)
