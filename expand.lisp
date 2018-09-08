@@ -446,7 +446,8 @@
 
 (defun |append-expander|(form env)
   (destructuring-bind(op . args)form
-    (let((expanded(remove nil (flatten-nested-op 'append(expand* args env)))))
+    (let((expanded(remove-if (lambda(x)(member x '(nil 'nil) :test #'equal))
+			     (flatten-nested-op 'append(expand* args env)))))
       (cond
 	((null expanded)nil)
 	((null(cdr expanded))
