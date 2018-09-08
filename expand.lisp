@@ -496,10 +496,9 @@
     (setf args (expand* args env))
     (cond
       ((loop :for form :in args
-	     :thereis (member form '(nil 'nil):test #'equal))
-       (let((args(remove-if (lambda(x)
-			      (or (member x '(nil 'nil) :test #'equal)
-				  (constantp x env)))
+	     :thereis (and (constantp form env)
+			   (null(introspect-environment:constant-form-value form env))))
+       (let((args(remove-if (lambda(x)(constantp x env))
 			    args)))
 	 (if args
 	   `(progn ,@args nil)
