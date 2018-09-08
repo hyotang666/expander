@@ -315,3 +315,12 @@
 #?(call 'append '(append '(1) (let((a 2))(append (list a a)))) 'optimize)
 => (let((a 2))(append '(1) (list a a)))
 ,:test jingoh.tester:sexp=
+
+(requirements-about mapcar :test equal)
+
+#?(call 'mapcar '(mapcar '+ '(1 2 3) ()) 'optimize)
+=> NIL
+
+#?(call 'mapcar '(mapcar '+ () (print '(1 2 3))) 'optimize)
+=> (progn (print '(1 2 3)) nil)
+

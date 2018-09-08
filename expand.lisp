@@ -488,10 +488,25 @@
 	      (rec rest (cons arg acc)))))
     (rec (reverse expanded))))
 
+(defun |mapcar-expander|(form env)
+  (destructuring-bind(op fun . args)form
+    (setf fun (expand fun env))
+    (cond
+      ((member nil args)
+       (let((args(remove-if (lambda(x)
+			      (or (null x)
+				  (constantp x env)))
+			    args)))
+	 (if args
+	   `(progn ,@args nil)
+	   nil)))
+      (t `(,op ,fun ,@(expand* args env))))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
     (:add |funcall-expander| funcall)
     (:add |append-expander| append)
+    (:add |mapcar-expander| mapcar maplist mapcan mapcon)
     ))
 
