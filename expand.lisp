@@ -444,8 +444,54 @@
 		     (cons `(,gensym ,(cadr bind))new-binds))))))
     (rec binds)))
 
+(defun |append-expander|(form env)
+  (destructuring-bind(op . args)form
+    (let((expanded(remove nil (expander:expand* args env))))
+      (cond
+	((null expanded)nil)
+	((null(cdr expanded))
+	 (car expanded))
+	(t (let((args(flatten-nested-op 'append expanded)))
+	     (multiple-value-bind(binds decls prebody args)(sieve-let args)
+	       (if(null binds)
+		 `(,op ,@args)
+		 (expand `(let ,binds ,@decls ,@prebody (,op ,@args)))))))))))
+
+(defun sieve-let(args)
+  (labels((rec(list &optional binds decls prebody args)
+	    (if(endp list)
+	      (values binds decls prebody (nreverse args))
+	      (body (car list)(cdr list)binds decls prebody args)))
+	  (body(arg rest binds-acc decls-acc prebody-acc args)
+	    (if(not(typep arg '#.(cons-type-specifier '(let()))))
+	      (rec rest binds-acc decls-acc prebody-acc (cons arg args))
+	      (multiple-value-bind(binds decls prebody main)(parse-bubble-let arg)
+		(rec rest
+		     (nconc binds binds-acc)
+		     (nconc decls decls-acc)
+		     (nconc prebody prebody-acc)
+		     (cons main args))))))
+    (rec args)))
+
+(defun flatten-nested-op(op expanded &key (args #'cdr))
+  (labels((rec(append-args &optional acc)
+	    (if(endp append-args)
+	      acc
+	      (body (car append-args)(cdr append-args)acc)))
+	  (body(arg rest acc)
+	    (if(and (listp arg)
+		    (progn (when (eq 'the (car arg))
+			     (setf arg (third arg)))
+			   (eq op (car arg))))
+	      (rec rest (append (nreverse(rec (funcall args arg)))
+				acc))
+	      (rec rest (cons arg acc)))))
+    (rec (reverse expanded))))
+
+(handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
     (:add |funcall-expander| funcall)
+    (:add |append-expander| append)
     ))
 

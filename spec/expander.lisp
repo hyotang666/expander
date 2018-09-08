@@ -294,3 +294,24 @@
 #?(call 'funcall '(funcall (let((a 0))(constantly a)) 1 2 3) 'optimize)
 => (let((a 0)) a)
 ,:test jingoh.tester:sexp=
+
+(requirements-about append :test equal)
+
+#?(call 'append '(append) 'optimize) => NIL
+
+#?(call 'appand '(append '(1 2 3)) 'optimize) => '(1 2 3)
+
+#?(call 'append '(append nil nil nil) 'optimize) => NIL
+
+#?(call 'append '(append nil '(1 2 3) nil) 'optimize) => '(1 2 3)
+
+#?(call 'append '(append '(1) (append '(2))) 'optimize) => (append '(1)'(2))
+
+#?(call 'append '(append '(1) (append '(2) '(3)) (append '(4)'(5))) 'optimize)
+=> (append '(1)'(2)'(3)'(4)'(5))
+#?(call 'append '(append '(1) '(2) (append '(3) (append '(4))'(5))) 'optimize)
+=> (append '(1)'(2)'(3)'(4)'(5))
+
+#?(call 'append '(append '(1) (let((a 2))(append (list a a)))) 'optimize)
+=> (let((a 2))(append '(1) (list a a)))
+,:test jingoh.tester:sexp=
