@@ -466,10 +466,7 @@
 	((null expanded)nil)
 	((null(cdr expanded))
 	 (car expanded))
-	(t (multiple-value-bind(binds decls prebody args)(sieve-let expanded)
-	     (if(null binds)
-	       `(,op ,@args)
-	       (expand `(let ,binds ,@decls ,@prebody (,op ,@args))))))))))
+	(t `(,op ,@expanded))))))
 
 (defun sieve-let(args)
   (labels((rec(list &optional binds decls prebody args)

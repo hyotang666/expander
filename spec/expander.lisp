@@ -312,18 +312,6 @@
 #?(call 'append '(append '(1) '(2) (append '(3) (append '(4))'(5))) 'optimize)
 => (append '(1)'(2)'(3)'(4)'(5))
 
-#?(call 'append '(append '(1) (let((a 2))(append (list a a)))) 'optimize)
-=> (let((g '(1))
-	(a 2))
-     (append g (list a a)))
-,:test jingoh.tester:sexp=
-
-#?(call 'append '(append (print '(1)) (let((a (print 2)))(append (list a)))) 'optimize)
-=> (let((var (print '(1)))
-	(a (print 2)))
-     (append var (list a)))
-,:test jingoh.tester:sexp=
-
 (requirements-about mapcar :test equal)
 
 #?(call 'mapcar '(mapcar '+ '(1 2 3) ()) 'optimize)
