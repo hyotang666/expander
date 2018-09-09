@@ -320,6 +320,11 @@
 #?(call 'mapcar '(mapcar '+ () (print '(1 2 3))) 'optimize)
 => (progn (print '(1 2 3)) nil)
 
+#?(call 'mapcar '(mapcar #'+ (mapcar #'+ nil (print '(1)))
+			 (print '(2))) 'optimize)
+=> (mapcar #'+ (progn (print '(1)) nil)
+	   (print '(2)))
+
 (requirements-about list)
 
 #?(call 'list '(list) 'optimize) => NIL
