@@ -349,3 +349,19 @@
 
 #?(call 'concatenate '(concatenate 'vector #(1) (concatenate 'list #(2) #(3))) 'optimize)
 => (concatenate 'vector #(1) #(2) #(3))
+
+(requirements-about * :test equal)
+
+#?(call '* '(* 1) 'optimize) => 1
+
+#?(call '* '(* '1) 'optimize) => 1
+
+#?(call '* '(* (the fixnum '1)) 'optimize) => 1
+
+#?(call '* '(* 1 2 (* 3 4 (* 5 6) 7 8) 9 (* 10 11)) 'optimize)
+=> (* 2 3 4 5 6 7 8 9 10 11)
+
+#?(call '* '(* 1 2 (* 3 4) 5 (* 6 (* 7 0) 8) 9) 'optimize) => 0
+
+#?(call '* '(* 1 2 (* 3 4) 5 (* 6 (* (print 7) 0) 8) 9) 'optimize)
+=> (progn (print 7) 0)

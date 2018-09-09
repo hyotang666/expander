@@ -523,6 +523,34 @@
 	 `(coerce ,(car expanded) ,type))
 	(t `(,op ,(expand type env) ,@expanded))))))
 
+(defun |*-expander|(form env)
+  (let((expanded(remove-if (lambda(x)
+			     (and (constantp x env)
+				  (eql 1 (introspect-environment:constant-form-value x env))))
+			   (flatten-nested-op '*
+					      (let((*expandtable*(find-expandtable 'standard)))
+						(expand* (cdr form) env))))))
+    (multiple-value-bind(zerop args)(sieve-zero expanded env)
+      (if zerop
+	(if args
+	  `(progn ,@args 0)
+	  0)
+	(cond
+	  ((null expanded)(*))
+	  ((null(cdr expanded))
+	   (car expanded))
+	  (t `(,(car form) ,@expanded)))))))
+
+(defun sieve-zero(expanded env)
+  (loop :for form :in expanded
+	:with zerop = nil
+	:if (and (constantp form env)
+		 (eql 0 (introspect-environment:constant-form-value form env)))
+	:do (setf zerop t)
+	:else :unless (constantp form env)
+	:collect form :into args
+	:finally (return (values zerop args))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -532,5 +560,6 @@
     (:add |list-expander| list)
     (:add |vector-expander| vector)
     (:add |concatenate-expander| concatenate)
+    (:add |*-expander| *)
     ))
 
