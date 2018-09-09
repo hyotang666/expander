@@ -551,6 +551,17 @@
 	:collect form :into args
 	:finally (return (values zerop args))))
 
+(defun |+-expander|(form env)
+  (let((expanded(remove-if (lambda(x)
+			     (and (constantp x env)
+				  (eql 0 (introspect-environment:constant-form-value x env))))
+			   (flatten-nested-op '+ (expand* (cdr form) env)))))
+    (cond
+      ((null expanded)(+))
+      ((cdr expanded)
+       `(,(car form),@expanded))
+      (t (car expanded)))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -561,5 +572,6 @@
     (:add |vector-expander| vector)
     (:add |concatenate-expander| concatenate)
     (:add |*-expander| *)
+    (:add |+-expander| +)
     ))
 

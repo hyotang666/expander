@@ -365,3 +365,20 @@
 
 #?(call '* '(* 1 2 (* 3 4) 5 (* 6 (* (print 7) 0) 8) 9) 'optimize)
 => (progn (print 7) 0)
+
+(requirements-about + :test equal)
+
+#?(call '+ '(+ 0) 'optimize) => 0
+
+#?(call '+ '(+ '0) 'optimize) => 0
+
+#?(call '+ '(+ (the fixnum '0)) 'optimize) => 0
+
+#?(call '+ '(+) 'optimize) => 0
+
+#?(call '+ '(+ (+) (+)) 'optimize) => 0
+
+#?(call '+ '(+ (+ (+ (+)))) 'optimize) => 0
+
+#?(call '+ '(+ (+ (+ (+(print 1))))) 'optimize)
+=> (print 1)
