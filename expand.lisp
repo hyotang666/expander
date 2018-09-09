@@ -545,10 +545,7 @@
 	   `(coerce nil ,type)))
 	((null(cdr expanded))
 	 `(coerce ,(car expanded) ,type))
-	(t (multiple-value-bind(binds decls prebody args)(sieve-let expanded)
-	     (if(null binds)
-	       `(,op ,type ,@expanded)
-	       (expand `(let,binds,@decls,@prebody (,op ,type ,@args))))))))))
+	(t `(,op ,(expand type env) ,@expanded))))))
 
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
