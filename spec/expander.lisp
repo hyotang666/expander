@@ -442,3 +442,8 @@
 
 #?(call '+ '(+ (+ (+ (+(print 1))))) 'optimize)
 => (print 1)
+
+#?(call '+ '(+ 1 (let((a 0))(+ a 2 3))) 'optimize)
+=> (let((a 0))
+     (+ 1 a 2 3))
+,:test jingoh.tester:sexp=

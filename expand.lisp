@@ -601,9 +601,12 @@
 			   (flatten-nested-op '+ (expand* (cdr form) env)))))
     (cond
       ((null expanded)(+))
-      ((cdr expanded)
-       `(,(car form),@expanded))
-      (t (car expanded)))))
+      ((null(cdr expanded))
+       (car expanded))
+      (t (multiple-value-bind(let-form args)(bubble-up expanded env)
+	   (if let-form
+	     (expand `(,@let-form (,(car form),@args)) env)
+	     `(,(car form),@expanded)))))))
 
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
