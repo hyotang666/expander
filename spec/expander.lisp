@@ -465,3 +465,12 @@
 #?(call 'if '(if nil 0) 'optimize) => NIL
 
 #?(call 'if '(if (the boolean t) 0 1) 'optimize) => 0
+
+(requirements-about optimized-locally :test equal)
+
+#?(call 'locally '(locally 0) 'optimize) => 0
+
+#?(call 'locally '(locally (declare) 0) 'optimize) => 0
+
+#?(call 'locally '(locally (print var)(print var2)) 'optimize)
+=> (progn (print var)(print var2))

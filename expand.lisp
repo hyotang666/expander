@@ -638,6 +638,16 @@
 	(car else))
       (list* (car form) pred then else))))
 
+(defun |optimized-locally-expander|(form env)
+  (destructuring-bind(op . body)form
+    (multiple-value-bind(body decls)(alexandria:parse-body(expander:expand* body env))
+      (setf decls (remove '(declare) decls :test #'equal))
+      (if decls
+	`(,op ,@decls ,@body)
+	(if(cdr body)
+	  `(progn ,@body)
+	  (car body))))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -651,5 +661,6 @@
     (:add |+-expander| +)
     (:add |optimized-let-expander| let let*)
     (:add |optimized-if-expander| if)
+    (:add |optimized-locally-expander| locally)
     ))
 
