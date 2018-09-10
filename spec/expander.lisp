@@ -422,6 +422,10 @@
 #?(call '* '(* 1 2 (* 3 4) 5 (* 6 (* (print 7) 0) 8) 9) 'optimize)
 => (progn (print 7) 0)
 
+#?(call '* '(* 1 2 (let((a 0))(1+ a)) 3 4) 'optimize)
+=> (let((a 0))(* 2 (1+ a) 3 4))
+,:test jingoh.tester:sexp=
+
 (requirements-about + :test equal)
 
 #?(call '+ '(+ 0) 'optimize) => 0

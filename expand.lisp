@@ -579,7 +579,10 @@
 	  ((null expanded)(*))
 	  ((null(cdr expanded))
 	   (car expanded))
-	  (t `(,(car form) ,@expanded)))))))
+	  (t (multiple-value-bind(let-form args)(bubble-up expanded env)
+	       (if let-form
+		 (expand `(,@let-form (,(car form),@args))env)
+		 `(,(car form),@expanded)))))))))
 
 (defun sieve-zero(expanded env)
   (loop :for form :in expanded
