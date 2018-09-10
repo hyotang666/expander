@@ -466,7 +466,17 @@
 	((null expanded)nil)
 	((null(cdr expanded))
 	 (car expanded))
-	(t `(,op ,@expanded))))))
+	(t (multiple-value-bind(let-form args)(bubble-up expanded)
+	     (if let-form
+	       (expand `(,@let-form (,op ,@args)) env)
+	       `(,op ,@args))))))))
+
+(defun bubble-up(args)
+  (if(not(typep (car args) '#.(cons-type-specifier '(let()))))
+    (values nil args)
+    (multiple-value-bind(binds decls prebody let-main)(parse-bubble-let(car args))
+      (values `(let,binds,@decls,@prebody)
+	      (cons let-main (cdr args))))))
 
 (defun flatten-nested-op(op args-list &key (args #'cdr))
   (labels((rec(list &optional acc)

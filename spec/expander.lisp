@@ -295,6 +295,34 @@
 => (let((a 0)) a)
 ,:test jingoh.tester:sexp=
 
+(requirements-about bubble-up)
+
+#?(expander::bubble-up '(1 2 3))
+:values (NIL (1 2 3))
+
+#?(expander::bubble-up '((let(a)(list a)) 1 2))
+:multiple-value-satisfies
+#`(& (jingoh.tester:sexp= $result1 '(let(a)))
+     (jingoh.tester:sexp= $result2 '((list a) 1 2)))
+
+#?(expander::bubble-up '((let((a 0))(declare(type fixnum a))(list a)) 1 2))
+:multiple-value-satisfies
+#`(& (jingoh.tester:sexp= $result1 '(let((a 0))(declare(type fixnum a))))
+     (jingoh.tester:sexp= $result2 '((list a) 1 2)))
+
+#?(expander::bubble-up '((let((a 0))(print a)(list a)) 1 2))
+:multiple-value-satisfies
+#`(& (jingoh.tester:sexp= $result1 '(let((a 0))(print a)))
+     (jingoh.tester:sexp= $result2 '((list a)1 2)))
+
+#?(expander::bubble-up '(1 (let((a 0))(list a)) 2))
+:values (nil (1 (let((a 0))(List a)) 2))
+
+#?(expander::bubble-up '((let(a)(list a))(let(b)(list b)) 3))
+:multiple-value-satisfies
+#`(& (jingoh.tester:sexp= $result1 '(let(a)))
+     (jingoh.tester:sexp= $result2 '((list a)(let(b)(list b))3)))
+
 (requirements-about append :test equal)
 
 #?(call 'append '(append) 'optimize) => NIL
@@ -309,8 +337,14 @@
 
 #?(call 'append '(append '(1) (append '(2) '(3)) (append '(4)'(5))) 'optimize)
 => (append '(1)'(2)'(3)'(4)'(5))
+
 #?(call 'append '(append '(1) '(2) (append '(3) (append '(4))'(5))) 'optimize)
 => (append '(1)'(2)'(3)'(4)'(5))
+
+#?(call 'append '(append (let((a 0))
+			   (append (list a) var))
+			 var2)
+	'optimize)
 
 (requirements-about mapcar :test equal)
 
