@@ -630,6 +630,14 @@
 	(t (let((*expandtable*(find-expandtable 'standard)))
 	     (expand `(,op ,binds ,@decls ,@body) env)))))))
 
+(defun |optimized-if-expander|(form env)
+  (destructuring-bind(pred then . else)(expand* (cdr form)env)
+    (if(constantp pred env)
+      (if(introspect-environment:constant-form-value pred env)
+	then
+	(car else))
+      (list* (car form) pred then else))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -642,5 +650,6 @@
     (:add |*-expander| *)
     (:add |+-expander| +)
     (:add |optimized-let-expander| let let*)
+    (:add |optimized-if-expander| if)
     ))
 

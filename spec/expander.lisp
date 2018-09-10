@@ -455,3 +455,13 @@
 
 #?(call 'lst '(let((a var))a) 'optimize)
 => var
+
+(requirements-about optimized-if)
+
+#?(call 'if '(if t 0 1) 'optimize) => 0
+
+#?(call 'if '(if nil 0 1) 'optimize) => 1
+
+#?(call 'if '(if nil 0) 'optimize) => NIL
+
+#?(call 'if '(if (the boolean t) 0 1) 'optimize) => 0
