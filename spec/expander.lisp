@@ -291,8 +291,8 @@
 #?(call 'funcall '(funcall (constantly 0) 1 2 3) 'optimize)
 => 0
 
-#?(call 'funcall '(funcall (let((a 0))(constantly a)) 1 2 3) 'optimize)
-=> (let((a 0)) a)
+#?(call 'funcall '(funcall (let((a 0)(b 1))(constantly a)) 1 2 3) 'optimize)
+=> (let((a 0)(b 1)) a)
 ,:test jingoh.tester:sexp=
 
 (requirements-about bubble-up)
@@ -447,3 +447,11 @@
 => (let((a 0))
      (+ 1 a 2 3))
 ,:test jingoh.tester:sexp=
+
+(requirements-about optimized-let :test equal)
+
+#?(call 'let '(let()(+ 1 2 3)) 'optimize)
+=> (+ 1 2 3)
+
+#?(call 'lst '(let((a var))a) 'optimize)
+=> var

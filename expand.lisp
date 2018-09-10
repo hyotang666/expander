@@ -608,6 +608,28 @@
 	     (expand `(,@let-form (,(car form),@args)) env)
 	     `(,(car form),@expanded)))))))
 
+; Remove-null-bind, e.g. (let()a)
+; Expand-useless-bind, e.g. (let((a b))a) => b
+(defun |optimized-let-expander|(form env)
+  (destructuring-bind(op binds . body)form
+    (multiple-value-bind(body decls)(alexandria:parse-body body)
+      (setf body (expander:expand* body env))
+      (cond
+	;; Remove-null-bind
+	((and (null binds)
+	      (null decls)
+	      (null(cdr body)))
+	 (car body))
+	;; Expand-useless-bind
+	((and (null (cdr body)) ; one body.
+	      (null (cdr binds)) ; one bind.
+	      (eq (car body) (alexandria:ensure-car (car binds))))
+	 (if(atom(car binds))
+	   nil
+	   (expander:expand (cadar binds) env)))
+	(t (let((*expandtable*(find-expandtable 'standard)))
+	     (expand `(,op ,binds ,@decls ,@body) env)))))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -619,5 +641,6 @@
     (:add |concatenate-expander| concatenate)
     (:add |*-expander| *)
     (:add |+-expander| +)
+    (:add |optimized-let-expander| let let*)
     ))
 
