@@ -372,6 +372,9 @@
 => (mapcar #'+ (progn (print '(1)) nil)
 	   (print '(2)))
 
+#?(call 'mapcar '(mapcar (progn #'+) nil) 'optimize)
+=> (progn (progn #'+) nil)
+
 (requirements-about list)
 
 #?(call 'list '(list) 'optimize) => NIL
