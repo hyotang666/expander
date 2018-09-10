@@ -316,7 +316,12 @@
      (jingoh.tester:sexp= $result2 '((list a)1 2)))
 
 #?(expander::bubble-up '(1 (let((a 0))(list a)) 2))
-:values (nil (1 (let((a 0))(List a)) 2))
+:multiple-value-satisfies
+#`(& (jingoh.tester:sexp= $value1 '(let((a 0))))
+     (jingoh.tester:sexp= $value2 '(1 (list a) 2)))
+
+#?(expander::bubble-up '(var (let((a 0))(list a)) 2))
+:values (nil (var (let((a 0))(list a)) 2))
 
 #?(expander::bubble-up '((let(a)(list a))(let(b)(list b)) 3))
 :multiple-value-satisfies
