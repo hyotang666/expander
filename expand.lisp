@@ -504,9 +504,23 @@
        (let((args(remove-if (lambda(x)(constantp x env))
 			    args)))
 	 (if args
-	   `(progn ,@args nil)
-	   nil)))
+	   (if(pure-fun-form-p fun env)
+	     `(progn ,@args nil)
+	     `(progn ,fun ,@args nil))
+	   (if(pure-fun-form-p fun env)
+	     nil
+	     `(progn ,fun nil)))))
       (t `(,op ,fun ,@args)))))
+
+(defun pure-fun-form-p(form env)
+  (or (constantp fun env)
+      (and (symbolp form)
+	   (let((type(introspect-environment:variable-information form env)))
+	     (if(member type '(nil :symbol-macro) :test #'eq)
+	       (return-from pure-fun-form-p nil)
+	       T)))
+      (typep fun '(cons (eql function)(cons symbol null)))
+      (typep fun '(cons (eql function)(cons (cons (eql lambda)*)*)*))))
 
 (defun |list-expander|(form env)
   (if(cdr form)
