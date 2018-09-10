@@ -350,6 +350,14 @@
 			   (append (list a) var))
 			 var2)
 	'optimize)
+=> (let((a 0))
+     (append (list a) var var2))
+,:test jingoh.tester:sexp=
+
+#?(call 'append '(append '(1 2) (let((a 0))(append (list a) '(3 4))) '(5 6)) 'optimize)
+=> (let((a 0))
+     (append '(1 2) (list a) '(3 4)'(5 6)))
+,:test jingoh.tester:sexp=
 
 (requirements-about mapcar :test equal)
 
