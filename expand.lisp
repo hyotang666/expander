@@ -544,6 +544,7 @@
 
 (defun |concatenate-expander|(form env)
   (destructuring-bind(op type . rest)form
+    (setf type (expand type env))
     (let*((expanded (remove-if (lambda(x)
 				 (and (constantp x env)
 				      (alexandria:emptyp (introspect-environment:constant-form-value x env))))
@@ -555,7 +556,12 @@
 	   `(coerce nil ,type)))
 	((null(cdr expanded))
 	 `(coerce ,(car expanded) ,type))
-	(t `(,op ,(expand type env) ,@expanded))))))
+	(t (if(not(constantp type env)) ; to keep eval order.
+	     `(,op ,type ,@expanded)
+	     (multiple-value-bind(let-form args)(bubble-up expanded env)
+	       (if let-form
+		 (expand `(,@let-form (,op ,type ,@args))env)
+		 `(,op ,type ,@expanded)))))))))
 
 (defun |*-expander|(form env)
   (let((expanded(remove-if (lambda(x)

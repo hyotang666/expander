@@ -400,6 +400,12 @@
 #?(call 'concatenate '(concatenate 'vector #(1) (concatenate 'list #(2) #(3))) 'optimize)
 => (concatenate 'vector #(1) #(2) #(3))
 
+#?(call 'concatenate '(concatenate 'vector '(1) (let((a 0))(concatenate 'list (list a) var)) var2)
+	'optimize)
+=> (let((a 0))
+     (concatenate 'vector '(1) (list a) var var2))
+,:test jingoh.tester:sexp=
+
 (requirements-about * :test equal)
 
 #?(call '* '(* 1) 'optimize) => 1
