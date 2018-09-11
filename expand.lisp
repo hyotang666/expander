@@ -657,6 +657,40 @@
 				:variable (mapcar #'alexandria:ensure-car binds)
 				:declare (alexandria:mappend #'cdr decls)))))))))
 
+(defun |optimized-let*-expander|(form env)
+  (destructuring-bind(op binds . body)form
+    (multiple-value-bind(body decls)(alexandria:parse-body body)
+      (setf body (expander:expand* body env))
+      (cond
+	;; Remove-null-bind
+	((and (null binds)
+	      (null decls)
+	      (null(cdr body)))
+	 (car body))
+	;; Expand-useless-bind
+	((and (null (cdr body)) ; one body.
+	      (null (cdr binds)) ; one bind.
+	      (eq (car body) (alexandria:ensure-car (car binds))))
+	 (if(atom(car binds))
+	   nil
+	   (expander:expand (cadar binds) env)))
+	(t `(,op,(loop :for elt :in binds
+		       :if (symbolp elt)
+		       :collect (progn (setf env (Augment-environment
+						   env
+						   :variable (list elt)))
+				       elt)
+		       :else :collect `(,(car elt)
+					 ,(expand (cadr elt)
+						  (setf env (Augment-environment
+							      env
+							      :variable (list (car elt)))))))
+	      ,@decls
+	      ,@(expand* body (if decls
+				(Augment-environment
+				  env
+				  :declare (alexandria:mappend #'cdr decls))
+				env))))))))
 
 (defun |optimized-if-expander|(form env)
   (destructuring-bind(pred then . else)(expand* (cdr form)env)
@@ -749,7 +783,8 @@
     (:add |concatenate-expander| concatenate)
     (:add |*-expander| *)
     (:add |+-expander| +)
-    (:add |optimized-let-expander| let let*)
+    (:add |optimized-let-expander| let)
+    (:add |optimized-let*-expander| let*)
     (:add |optimized-if-expander| if)
     (:add |optimized-locally-expander| locally)
     (:add |optimized-block-expander| block)
