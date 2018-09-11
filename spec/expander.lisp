@@ -474,3 +474,25 @@
 
 #?(call 'locally '(locally (print var)(print var2)) 'optimize)
 => (progn (print var)(print var2))
+
+(requirements-about optimized-block :test equal)
+
+#?(call 'block '(block tag) 'optimize) => NIL
+
+#?(call 'block '(block tag 0) 'optimize) => 0
+
+#?(call 'block '(block tag (return-from tag 0) (print 1)) 'optimize)
+=> 0
+
+#?(call 'block '(block tag (let((a 0))(list a a))) 'optimize)
+=> (let((a 0))(list a a))
+
+#?(call 'block '(block tag (print 1)(print 2)) 'optimize)
+=> (progn (print 1)(print 2))
+
+#?(call 'block '(block tag (print 1) (return-from tag (print 2)) (print 3))
+	'optimize)
+=> (block tag (print 1) (return-from tag (print 2)))
+
+#?(call 'block '(block tag (let((a (print 0)))(return-from tag a))) 'optimize)
+=> (print 0)

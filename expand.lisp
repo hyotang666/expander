@@ -648,6 +648,37 @@
 	  `(progn ,@body)
 	  (car body))))))
 
+(defun |optimized-block-expander|(form env)
+  (destructuring-bind(op tag . body)form
+    (setf body (expander:expand* body env))
+    (cond
+      ((null body)nil)
+      ((and (null (cdr body))
+	    (constantp (car body)env))
+       (car body))
+      ((typep (car body) `(cons (eql return-from)(cons (eql ,tag) *)))
+       (third(car body)))
+      ;; If block does not have return-from, no need to achive block.
+      ((not (trestrul:find-node-if (lambda(x)
+				     (typep x `(cons (eql return-from)
+						     (cons (eql ,tag)
+							   (cons * null)))))
+				   body))
+       (if(cdr body)
+	 `(progn ,@body)
+	 (car body)))
+      (t (let*((pos(position-if (lambda(x)
+				  (typep x '(cons (eql return-from) *)))
+				body))
+	       ;; If body has return-from form, we can ignore rest forms.
+	       (body (if pos
+		       (subseq body 0 (1+ pos))
+		       body)))
+	   (multiple-value-bind(let-form forms)(bubble-up body env)
+	     (if let-form
+	       (expand `(,@let-form (,op ,tag ,@forms))env)
+	       `(,op ,tag ,@body))))))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -662,5 +693,6 @@
     (:add |optimized-let-expander| let let*)
     (:add |optimized-if-expander| if)
     (:add |optimized-locally-expander| locally)
+    (:add |optimized-block-expander| block)
     ))
 
