@@ -80,7 +80,13 @@
 (defun find-expandtable(name &optional (errorp t))
   (or (gethash name *expandtables*)
       (when errorp
-	(error 'missing-expandtable :name name))))
+	(restart-case(error 'missing-expandtable :name name)
+	  (use-value(value) :report "Use altanative expandtable."
+			    :interactive (lambda()
+					   (format *query-io* "Altenative > ")
+					   (force-output *query-io*)
+					   (list(read)))
+			    (find-expandtable value))))))
 
 ;;;; MAKE-EXPANDTABLE
 (defun make-expandtable(clauses)
