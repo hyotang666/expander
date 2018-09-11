@@ -24,6 +24,7 @@
     #:use-prev #:use-next
     ;; Helpers
     #:find-expandtable #:make-expandtable #:expand-sub-form #:expand* #:call
+    #:expand-with
     ;; Walker
     #:walk-sublis
     )
@@ -105,6 +106,10 @@
 	  (:add (loop :with value = (cadr clause)
 		      :for key :in (cddr clause)
 		      :do (ADD-EXPANDER key value))))))))
+
+(defun expand-with(name form)
+  (let((*expandtable* (find-expandtable name)))
+    (expand form)))
 
 ;;;; Standard expandtable.
 (defun |quote-expander|(whole env)
