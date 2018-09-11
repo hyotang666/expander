@@ -398,6 +398,8 @@
 (defun |funcall-expander|(form env)
   (destructuring-bind(op function . args)form
     (setf function (expand function env))
+    (when (typep function '#.(cons-type-specifier '(the)))
+      (setf function (third function)))
     (typecase function
       ((cons (eql function)(cons symbol null))
        `(,(cadr function),@(expand* args env)))
