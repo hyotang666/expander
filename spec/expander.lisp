@@ -514,3 +514,7 @@
 
 #?(call 'format '(format t "~S : ~S" 0 1) 'optimize)
 => (format t #.(macroexpand-1 '(formatter "~S : ~S")) 0 1)
+
+(requirements-about optimized-the :test equal)
+
+#?(call 'the '(the fixnum (the fixnum (the fixnum 0))) 'optimize) => (the fixnum 0)

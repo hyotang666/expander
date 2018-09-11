@@ -698,6 +698,15 @@
 	    ,@(expand* args env))
       (expand-sub-form form env))))
 
+(defun |optimized-the-expander|(form env)
+  (destructuring-bind(op type body)form
+    (setf body (expand body env))
+    (if(and (listp body)
+	    (eq 'the (car body))
+	    (equal type (cadr body)))
+      body
+      `(,op ,type ,body))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -715,5 +724,6 @@
     (:add |optimized-block-expander| block)
     (:add |optimized-return-from-expander| return-from)
     (:add |format-expander| format)
+    (:add |optimized-the-expander| the)
     ))
 
