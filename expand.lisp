@@ -415,7 +415,11 @@
 		 `(locally ,@body)
 		 (car body)))))))
       (#.(cons-type-specifier '(constantly *))
-       (cadr function))
+       (let((arg-forms(remove-if (lambda(x)(constantp x env))
+				 (expand* args env))))
+	 (if arg-forms
+	   `(progn ,@arg-forms ,(cadr function))
+	   (cadr function))))
       (#.(cons-type-specifier '(let()))
        (multiple-value-bind(binds decls prebody main)(parse-bubble-let function)
 	 (expand `(let ,binds ,@decls ,@prebody(,op ,main ,@args)))))
