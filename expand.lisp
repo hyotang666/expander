@@ -692,6 +692,15 @@
 	  (expand `(,@let-form (,op ,tag ,@main)) env)
 	  `(,op ,tag ,body))))))
 
+(defun |format-expander|(form env)
+  (destructuring-bind(op target string . args)form
+    (if(constantp string env)
+      `(,op ,(expand target env)
+	    ,(expand `(formatter ,(introspect-environment:constant-form-value string env))
+		     env)
+	    ,@(expand* args env))
+      (expand-sub-form form env))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -708,5 +717,6 @@
     (:add |optimized-locally-expander| locally)
     (:add |optimized-block-expander| block)
     (:add |optimized-return-from-expander| return-from)
+    (:add |format-expander| format)
     ))
 

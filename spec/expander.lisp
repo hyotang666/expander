@@ -505,3 +505,8 @@
 #?(call 'return-from '(return-from a (let((a 0))(return-from b (list a a)))) 'optimize)
 => (let((a 0))(return-from b (list a a)))
 ,:test jingoh.tester:sexp=
+
+(requirements-about format :test equal)
+
+#?(call 'format '(format t "~S : ~S" 0 1) 'optimize)
+=> (format t #.(macroexpand-1 '(formatter "~S : ~S")) 0 1)
