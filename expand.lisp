@@ -234,8 +234,13 @@
 
 (defun |lambda-expander|(whole env)
   (destructuring-bind(op params . body)whole
-    `#'(,op ,(expand-params params env)
-	    ,@(expand* body env))))
+    (multiple-value-bind(body decls)(alexandria:parse-body body)
+      `#'(,op ,(expand-params params env)
+	      ,@decls
+	      ,@(expand* body (Augment-environment
+				env
+				:variable (lambda-fiddle:extract-all-lambda-vars params)
+				:declare (alexandria:mappend #'cdr decls)))))))
 
 (defun |the-expander|(whole env)
   (destructuring-bind(op type form)whole

@@ -3,8 +3,9 @@
 (defsystem :expander
   :depends-on
   (
-   "introspect-environment"
-   "alexandria"
+   "introspect-environment"     ; Wrapper for environment introspection.
+   "alexandria"                 ; Public domain utilities.
+   "lambda-fiddle"              ; Utilities for lambda list parsing.
    )
   :components((:file "expand")))
 
