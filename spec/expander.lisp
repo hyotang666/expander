@@ -496,3 +496,12 @@
 
 #?(call 'block '(block tag (let((a (print 0)))(return-from tag a))) 'optimize)
 => (print 0)
+
+(requirements-about optimized-return-from :test equal)
+
+#?(call 'return-from '(return-from a (return-from b (return-from c var))) 'optimize)
+=> (return-from c var)
+
+#?(call 'return-from '(return-from a (let((a 0))(return-from b (list a a)))) 'optimize)
+=> (let((a 0))(return-from b (list a a)))
+,:test jingoh.tester:sexp=

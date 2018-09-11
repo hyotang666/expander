@@ -679,6 +679,19 @@
 	       (expand `(,@let-form (,op ,tag ,@forms))env)
 	       `(,op ,tag ,@body))))))))
 
+(defun |optimized-return-from-expander|(form env)
+  (destructuring-bind(op tag body)form
+    (setf body (expander:expand body env))
+    ;; To reduce nested return-from, e.g. (return-from a (return-from b ...))
+    ;; In the example above, `A` can be ignored.
+    (if(and (listp body)
+	    (eq 'return-from (car body)))
+      body
+      (multiple-value-bind(let-form main)(bubble-up (list body) env)
+	(if let-form
+	  (expand `(,@let-form (,op ,tag ,@main)) env)
+	  `(,op ,tag ,body))))))
+
 (handler-bind((expander-conflict #'use-next))
   (defexpandtable optimize
     (:use standard)
@@ -694,5 +707,6 @@
     (:add |optimized-if-expander| if)
     (:add |optimized-locally-expander| locally)
     (:add |optimized-block-expander| block)
+    (:add |optimized-return-from-expander| return-from)
     ))
 
