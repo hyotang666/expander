@@ -319,7 +319,7 @@
     (ATOM form)
     (LIST (typecase (car form)
 	    ((cons (eql lambda) *) ; ((lambda()...)...)
-	     `((|lambda-expander| (car form) environment)
+	     `(,(second(|lambda-expander| (car form) environment))
 	       ,@(expand* (cdr form)environment)))
 	    (list form) ; it may just data.
 	    (t (%expand form environment))))))
@@ -350,7 +350,7 @@
     (if(atom result) ; may be expanded into atom directly.
       result ; else RESULT  may include macro form in its sub-forms.
       (if(typep (car result) '(cons (eql lambda)*))
-	`((|lambda-expander| (car result) env)
+	`(,(second(|lambda-expander| (car result) env))
 	  ,@(expand* (cdr result)env))
 	(funcall (get-expander (car result) cont)
 		 result env)))))
