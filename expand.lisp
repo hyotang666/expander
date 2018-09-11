@@ -400,11 +400,15 @@
       (cons `(cons ,(cons-type-specifier (car list))
 		   ,(cons-type-specifier (cdr list)))))))
 
+(defun remove-the(form)
+  (if(and (listp form)
+	  (eq 'the (car form)))
+    (remove-the (third form))
+    form))
+
 (defun |funcall-expander|(form env)
   (destructuring-bind(op function . args)form
-    (setf function (expand function env))
-    (when (typep function '#.(cons-type-specifier '(the)))
-      (setf function (third function)))
+    (setf function (remove-the (expand function env)))
     (typecase function
       ((cons (eql function)(cons symbol null))
        `(,(cadr function),@(expand* args env)))
@@ -509,13 +513,10 @@
   (labels((rec(list &optional acc)
 	    (if(endp list)
 	      acc
-	      (body (car list)(cdr list)acc)))
+	      (body (remove-the(car list))(cdr list)acc)))
 	  (body(form rest acc)
-	    (if(and (listp form)
-		    (progn (when (eq 'the (car form))
-			     (setf form (third form)))
-			   (and (listp form)
-				(eq op (car form)))))
+	    (if (and (listp form)
+		     (eq op (car form)))
 	      (rec rest (rec (funcall args form)acc))
 	      (rec rest (cons form acc)))))
     (nreverse (rec args-list))))
