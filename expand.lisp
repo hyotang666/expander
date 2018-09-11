@@ -641,8 +641,16 @@
 	 (if(atom(car binds))
 	   nil
 	   (expander:expand (cadar binds) env)))
-	(t (let((*expandtable*(find-expandtable 'standard)))
-	     (expand `(,op ,binds ,@decls ,@body) env)))))))
+	(t `(,op,(loop :for elt :in binds
+		       :if(symbolp elt):collect elt
+		       :else :collect
+		       `(,(car elt),(expand(cadr elt)env)))
+	      ,@decls
+	      ,@(expand* body (Augment-environment
+				env
+				:variable (mapcar #'alexandria:ensure-car binds)
+				:declare (alexandria:mappend #'cdr decls)))))))))
+
 
 (defun |optimized-if-expander|(form env)
   (destructuring-bind(pred then . else)(expand* (cdr form)env)
