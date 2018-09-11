@@ -279,13 +279,17 @@
 => (let((a 1)(b 2))(list a b))
 
 #?(call 'funcall '(funcall (lambda(x)(print x)) x) 'optimize)
-=> (print x)
+=> (let((x x))
+     (print x))
 
 #?(call 'funcall '(funcall (lambda(x)(print x)(+ x 3)) x) 'optimize)
-=> (locally (print x)(+ x 3))
+=> (let((x x))
+     (print x)
+     (+ x 3))
 
 #?(call 'funcall '(funcall (lambda(x y)(list x y)) 1 y) 'optimize)
-=> (let((x 1))
+=> (let((x 1)
+	(y y))
      (list x y))
 
 #?(call 'funcall '(funcall (constantly 0) 1 2 3) 'optimize)

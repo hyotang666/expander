@@ -395,10 +395,7 @@
 	 (declare(ignore function lambda))
 	 (if(intersectionp lambda-list lambda-list-keywords :test #'eq)
 	   `(,op #'(lambda ,lambda-list ,@body) ,@(expand* args env))
-	   (let((binds(loop :for var :in lambda-list
-			    :for arg :in args
-			    :unless (eq var arg)
-			    :collect `(,var ,(expand arg env)))))
+	   (let((binds(mapcar #'list lambda-list args)))
 	     (if binds
 	       `(let,binds,@body)
 	       (if(cdr body)
