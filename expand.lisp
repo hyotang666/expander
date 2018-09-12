@@ -79,7 +79,9 @@
 
 ;;;; FIND-EXPANDTABLE
 (defun find-expandtable(name &optional (errorp t))
-  (or (gethash name *expandtables*)
+  (or (and (hash-table-p name)
+	   name)
+      (gethash name *expandtables*)
       (when errorp
 	(restart-case(error 'missing-expandtable :name name)
 	  (use-value(value) :report "Use altanative expandtable."
@@ -468,10 +470,25 @@
 								 (sublis alist (cddr option))))
 							 (t option)))))
 	  (loop :for body :on body
+		:with *expandtable* = (handler-bind((expander-conflict #'use-next))
+					(make-expandtable `((:use ,*expandtable*)
+							    (:add |bubble-up-declare-expander| declare))))
 		:for form = (walk-sublis symbol-macrolet-cadr (car body))
 		:if(null(cdr body))
 		:return (values prebody form)
 		:else :collect form :into prebody))))))
+
+(defun |bubble-up-declare-expander|(form env)
+  (cons (car form)
+	(loop :for option :in (cdr form)
+	      :collect (case(car option)
+			 ((ignore ignorable)
+			  (cons (car option)(expand* (cdr option)env)))
+			 ((type)
+			  (list* (car option)
+				 (cadr option)
+				 (expand* (cddr option) env)))
+			 (t option)))))
 
 (defun parse-bubble-binds(binds)
   (labels((rec(binds &optional sm-cadr new-binds)
