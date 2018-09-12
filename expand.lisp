@@ -43,7 +43,8 @@
   )
 
 #| DSL |#
-(defvar *expandtables* (make-hash-table :test #'eq))
+(eval-when(:compile-toplevel :load-toplevel :execute)
+  (defvar *expandtables* (make-hash-table :test #'eq)))
 
 ;;;; DEFEXPANDTABLE
 (defmacro defexpandtable(name &rest clause)
@@ -84,36 +85,40 @@
       (invoke-restart restart))))
 
 ;;;; FIND-EXPANDTABLE
-(defun find-expandtable(name &optional (errorp t))
-  (or (and (hash-table-p name)
-	   name)
-      (gethash name *expandtables*)
-      (when errorp
-	(restart-case(error 'missing-expandtable :name name)
-	  (use-value(value) :report "Use altanative expandtable."
-			    :interactive (lambda()
-					   (format *query-io* "Altenative > ")
-					   (force-output *query-io*)
-					   (list(read)))
-			    (find-expandtable value))))))
+(eval-when(:compile-toplevel :load-toplevel :execute)
+  (defun find-expandtable(name &optional (errorp t))
+    (or (and (hash-table-p name)
+	     name)
+	(gethash name *expandtables*)
+	(when errorp
+	  (restart-case(error 'missing-expandtable :name name)
+	    (use-value(value) :report "Use altanative expandtable."
+			      :interactive (lambda()
+					     (format *query-io* "Altenative > ")
+					     (force-output *query-io*)
+					     (list(read)))
+			      (find-expandtable value))))))
+  )
 
 ;;;; MAKE-EXPANDTABLE
-(defun make-expandtable(clauses)
-  (let((ht(make-hash-table :test #'eq)))
-    (flet((ADD-EXPANDER(key value)
-	    (if(null(gethash key ht))
-	      (setf (gethash key ht) value)
-	      (restart-case(error 'expander-conflict :name key)
-		(use-prev() :report "Use previous expander, discard new one.")
-		(use-next() :report "Use new expander, discard old one."
-			    (setf (gethash key ht)value))))))
-      (dolist(clause clauses ht)
-	(ecase (car clause)
-	  (:use (dolist(elt (cdr clause))
-		  (maphash #'ADD-EXPANDER (find-expandtable elt))))
-	  (:add (loop :with value = (cadr clause)
-		      :for key :in (cddr clause)
-		      :do (ADD-EXPANDER key value))))))))
+(eval-when(:compile-toplevel :load-toplevel :execute)
+  (defun make-expandtable(clauses)
+    (let((ht(make-hash-table :test #'eq)))
+      (flet((ADD-EXPANDER(key value)
+	      (if(null(gethash key ht))
+		(setf (gethash key ht) value)
+		(restart-case(error 'expander-conflict :name key)
+		  (use-prev() :report "Use previous expander, discard new one.")
+		  (use-next() :report "Use new expander, discard old one."
+			      (setf (gethash key ht)value))))))
+	(dolist(clause clauses ht)
+	  (ecase (car clause)
+	    (:use (dolist(elt (cdr clause))
+		    (maphash #'ADD-EXPANDER (find-expandtable elt))))
+	    (:add (loop :with value = (cadr clause)
+			:for key :in (cddr clause)
+			:do (ADD-EXPANDER key value))))))))
+  )
 
 ;;;; Standard expandtable.
 (defun |quote-expander|(whole env)
@@ -282,23 +287,25 @@
     `(,op ,cond ,@(expand* body env))))
 
 ;;;; Standard expandtable
-(defexpandtable standard
-  (:add |quote-expander| quote go declare)
-  (:add |function-expander| function)
-  (:add |macrolet-expander| macrolet)
-  (:add |symbol-macrolet-expander| symbol-macrolet)
-  (:add |let-expander| let)
-  (:add |let*-expander| let*)
-  (:add |flet-expander| flet)
-  (:add |labels-expander| labels)
-  (:add |lambda-expander| lambda)
-  (:add |the-expander| the return-from)
-  (:add |unwind-protect-expander| unwind-protect)
-  (:add |throw-expander| throw)
-  (:add |setq-expander| setq)
-  (:add |if-expander| if)
-  (:add |locally-expander| locally multiple-value-call multiple-value-prog1 tagbody progn progv load-time-value catch)
-  (:add |eval-when-expander| eval-when block)
+(eval-when(:compile-toplevel :load-toplevel :execute)
+  (defexpandtable standard
+    (:add |quote-expander| quote go declare)
+    (:add |function-expander| function)
+    (:add |macrolet-expander| macrolet)
+    (:add |symbol-macrolet-expander| symbol-macrolet)
+    (:add |let-expander| let)
+    (:add |let*-expander| let*)
+    (:add |flet-expander| flet)
+    (:add |labels-expander| labels)
+    (:add |lambda-expander| lambda)
+    (:add |the-expander| the return-from)
+    (:add |unwind-protect-expander| unwind-protect)
+    (:add |throw-expander| throw)
+    (:add |setq-expander| setq)
+    (:add |if-expander| if)
+    (:add |locally-expander| locally multiple-value-call multiple-value-prog1 tagbody progn progv load-time-value catch)
+    (:add |eval-when-expander| eval-when block)
+    )
   )
 
 ;;;; *EXPANDTABLE*, current expandtable.
