@@ -6,6 +6,7 @@
    "introspect-environment"     ; Wrapper for environment introspection.
    "alexandria"                 ; Public domain utilities.
    "lambda-fiddle"              ; Utilities for lambda list parsing.
+   "trestrul"                   ; Utilities for tree structured list.
    )
   :components((:file "expand")))
 
