@@ -291,7 +291,7 @@
   (:add |the-expander| the return-from)
   (:add |unwind-protect-expander| unwind-protect)
   (:add |throw-expander| throw)
-  (:add |setq-expander| setq setf)
+  (:add |setq-expander| setq)
   (:add |if-expander| if)
   (:add |locally-expander| locally multiple-value-call multiple-value-prog1 tagbody progn progv load-time-value)
   (:add |eval-when-expander| eval-when catch block)
