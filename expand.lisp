@@ -293,8 +293,8 @@
   (:add |throw-expander| throw)
   (:add |setq-expander| setq)
   (:add |if-expander| if)
-  (:add |locally-expander| locally multiple-value-call multiple-value-prog1 tagbody progn progv load-time-value)
-  (:add |eval-when-expander| eval-when catch block)
+  (:add |locally-expander| locally multiple-value-call multiple-value-prog1 tagbody progn progv load-time-value catch)
+  (:add |eval-when-expander| eval-when block)
   )
 
 (defmacro trace-expanders(name)
