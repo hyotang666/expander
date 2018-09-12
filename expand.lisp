@@ -115,10 +115,6 @@
 		      :for key :in (cddr clause)
 		      :do (ADD-EXPANDER key value))))))))
 
-(defun expand-with(name form)
-  (let((*expandtable* (find-expandtable name)))
-    (expand form)))
-
 ;;;; Standard expandtable.
 (defun |quote-expander|(whole env)
   (declare(ignore env))
@@ -305,6 +301,18 @@
   (:add |eval-when-expander| eval-when block)
   )
 
+;;;; *EXPANDTABLE*, current expandtable.
+(defparameter *expandtable*(find-expandtable 'standard))
+
+#| Debug use |#
+(defun call(symbol form &optional(name 'standard))
+  (let((*expandtable*(find-expandtable name)))
+    (funcall(get-expander symbol)form nil)))
+
+(defun expand-with(name form)
+  (let((*expandtable* (find-expandtable name)))
+    (expand form)))
+
 (defmacro trace-expanders(name)
   (let((table(find-expandtable name))
        names)
@@ -321,14 +329,6 @@
 		     (trace-expanders ,expandtable)
 		     (expand-with ',expandtable ',form))
      (untrace)))
-
-;;;; *EXPANDTABLE*, current expandtable.
-(defparameter *expandtable*(find-expandtable 'standard))
-
-;;; To debug, or to test.
-(defun call(symbol form &optional(name 'standard))
-  (let((*expandtable*(find-expandtable name)))
-    (funcall(get-expander symbol)form nil)))
 
 ;;;; EXPAND
 (prototype expand(T &optional T)T)
