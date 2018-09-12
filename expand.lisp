@@ -1,10 +1,6 @@
 (in-package :cl-user)
 #+sbcl(require :sb-cltl2)
 (defpackage :expander(:use :cl)
-  (:export ; for light users.
-    ;; Main api
-    #:expand
-    )
   (:shadow #:macroexpand)
   (:import-from #.(or #+sbcl :sb-cltl2
 		      #+ccl :ccl
@@ -12,6 +8,11 @@
 		#:augment-environment
 		#:parse-macro
 		#:enclose)
+
+  (:export ; for light users.
+    ;; Main api
+    #:expand
+    )
   (:export ; for hackers.
     ;; Main DSL
     #:defexpandtable
@@ -23,10 +24,15 @@
     ;; Restarts
     #:use-prev #:use-next
     ;; Helpers
-    #:find-expandtable #:make-expandtable #:expand-sub-form #:expand* #:call
-    #:expand-with
+    #:find-expandtable #:make-expandtable #:expand-sub-form #:expand*
     ;; Walker
     #:walk-sublis
+    )
+  (:export ; helpers to extension.
+    #:parse-bubble-let #:expand-params #:remove-the #:pure-fun-form-p
+    )
+  (:export ; debug use
+    #:call #:expand-with #:with-trace-out #:trace-expanders
     )
   )
 (in-package :expander)
