@@ -306,6 +306,14 @@
 	     table)
     `(trace ,@names)))
 
+(defmacro with-trace-out((expandtable filename)form)
+  `(unwind-protect (with-open-file(*trace-output* ,filename :direction :output
+						  :if-does-not-exist :create
+						  :if-exists :supersede)
+		     (trace-expanders ,expandtable)
+		     (expand-with ',expandtable ',form))
+     (untrace)))
+
 ;;;; *EXPANDTABLE*, current expandtable.
 (defparameter *expandtable*(find-expandtable 'standard))
 
