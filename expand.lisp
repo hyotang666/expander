@@ -453,7 +453,7 @@
 								    symbol-macrolet-cadr)
 					      :collect (case (car option)
 							 ((ignore ignorable)
-							  (sublis alist (cdr option)))
+							  (cons (car option)(sublis alist (cdr option))))
 							 ((type)
 							  (list* (car option)
 								 (cadr option)
