@@ -191,10 +191,10 @@
 					       :variable (list elt)))
 				   elt)
 		   :else :collect `(,(car elt)
-				     ,(expand (cadr elt)
-					      (setf env (Augment-environment
-							  env
-							  :variable (list (car elt)))))))
+				     ,(prog1 (expand (cadr elt) env)
+					(setf env (Augment-environment
+						    env
+						    :variable (list (car elt)))))))
 	    ,@decls
 	    ,@(expand* body (if decls
 			      (Augment-environment
