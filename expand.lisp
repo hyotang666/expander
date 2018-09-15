@@ -199,6 +199,7 @@
 	    ,@(expand* body (if decls
 			      (Augment-environment
 				env
+				:variable (mapcar #'alexandria:ensure-car binds)
 				:declare (alexandria:mappend #'cdr decls))
 			      env))))))
 
