@@ -6,11 +6,10 @@ Common Lisp has strong true macros.
 
 ### Issues
 ANSI CL does not have operator for recursively expand all of macros.
-Library MACROEXPAND-DAMMIT provides it.
-But it is slow, not robust, and complex code.
+Some library provides such features, but one remains `MACROLET` and `SYMBOL-MACROLET`, one always generates `LOCALLY`.
+There is no libraries that I want.
 
 ### Proposal
-EXPANDER provede it.
 
 ## Usage
 
