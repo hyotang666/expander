@@ -306,31 +306,36 @@
 
 #?(expander::bubble-up '((let(a)(list a)) 1 2))
 :multiple-value-satisfies
-#`(& (jingoh.tester:sexp= $result1 '(let(a)))
-     (jingoh.tester:sexp= $result2 '((list a) 1 2)))
+(lambda($result1 $result2)
+  (& (jingoh.tester:sexp= $result1 '(let(a)))
+     (jingoh.tester:sexp= $result2 '((list a) 1 2))))
 
 #?(expander::bubble-up '((let((a 0))(declare(type fixnum a))(list a)) 1 2))
 :multiple-value-satisfies
-#`(& (jingoh.tester:sexp= $result1 '(let((a 0))(declare(type fixnum a))))
-     (jingoh.tester:sexp= $result2 '((list a) 1 2)))
+(lambda($result1 $result2)
+  (& (jingoh.tester:sexp= $result1 '(let((a 0))(declare(type fixnum a))))
+     (jingoh.tester:sexp= $result2 '((list a) 1 2))))
 
 #?(expander::bubble-up '((let((a 0))(print a)(list a)) 1 2))
 :multiple-value-satisfies
-#`(& (jingoh.tester:sexp= $result1 '(let((a 0))(print a)))
-     (jingoh.tester:sexp= $result2 '((list a)1 2)))
+(lambda($result1 $result2)
+  (& (jingoh.tester:sexp= $result1 '(let((a 0))(print a)))
+     (jingoh.tester:sexp= $result2 '((list a)1 2))))
 
 #?(expander::bubble-up '(1 (let((a 0))(list a)) 2))
 :multiple-value-satisfies
-#`(& (jingoh.tester:sexp= $value1 '(let((a 0))))
-     (jingoh.tester:sexp= $value2 '(1 (list a) 2)))
+(lambda($value1 $value2)
+  (& (jingoh.tester:sexp= $value1 '(let((a 0))))
+     (jingoh.tester:sexp= $value2 '(1 (list a) 2))))
 
 #?(expander::bubble-up '(var (let((a 0))(list a)) 2))
 :values (nil (var (let((a 0))(list a)) 2))
 
 #?(expander::bubble-up '((let(a)(list a))(let(b)(list b)) 3))
 :multiple-value-satisfies
-#`(& (jingoh.tester:sexp= $result1 '(let(a)))
-     (jingoh.tester:sexp= $result2 '((list a)(let(b)(list b))3)))
+(lambda($result1 $result2)
+  (& (jingoh.tester:sexp= $result1 '(let(a)))
+     (jingoh.tester:sexp= $result2 '((list a)(let(b)(list b))3))))
 
 (requirements-about append :test equal)
 
