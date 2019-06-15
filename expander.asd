@@ -1,6 +1,7 @@
 ; vim: ft=lisp et
 (in-package :asdf)
 (defsystem :expander
+  :version "0.0.1"
   :depends-on
   (
    "introspect-environment"     ; Wrapper for environment introspection.
@@ -29,3 +30,8 @@
     (let ((args (jingoh.args keys)))
       (declare (special args))
       (call-next-method))))
+(defmethod operate :around(o (c (eql (find-system "expander")))
+                             &key((:compile-print *compile-print*))
+                             ((:compile-verbose *compile-verbose*))
+                             &allow-other-keys)
+  (call-next-method))
