@@ -75,11 +75,13 @@
 
 ;;;; RESTARTS
 (defun use-prev(condition)
+  (check-type condition condition)
   (let((restart(find-restart 'use-prev condition)))
     (when restart
       (invoke-restart restart))))
 
 (defun use-next(condition)
+  (check-type condition condition)
   (let((restart(find-restart 'use-next condition)))
     (when restart
       (invoke-restart restart))))
