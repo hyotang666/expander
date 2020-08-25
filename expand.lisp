@@ -60,6 +60,13 @@
   `(SETF (GETHASH ',name *EXPANDTABLES*)
 	 (MAKE-EXPANDTABLE ',clause)))
 
+(defun pprint-defexpandtable (stream exp)
+  (setf stream (or stream *standard-output*))
+  (funcall (formatter "~:<~W~^ ~1I~@_~W~^~@{ ~_~W~}~:>")
+           stream exp))
+
+(set-pprint-dispatch '(cons (member defexpandtable)) 'pprint-defexpandtable)
+
 ;;;; CONDITIONS
 (define-condition expander-error(error)())
 (define-condition missing-expandtable(expander-error cell-error)
