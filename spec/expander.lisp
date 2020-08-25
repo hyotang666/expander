@@ -26,6 +26,12 @@
 
 ;;;; Exceptional-Situations:
 
+;;;; Tests.
+;; Return-from's second argument is optional.
+#?(expand '(return-from name))
+=> (RETURN-FROM NAME)
+,:test equal
+
 (requirements-about DEFEXPANDTABLE)
 
 ;;;; Description:

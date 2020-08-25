@@ -1,6 +1,7 @@
 ; vim: ft=lisp et
 (in-package :asdf)
 (defsystem :expander.test
+  :version "0.0.1"
   :depends-on
   (:jingoh "expander")
   :components

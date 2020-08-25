@@ -1,7 +1,7 @@
 ; vim: ft=lisp et
 (in-package :asdf)
 (defsystem :expander
-  :version "0.2.0"
+  :version "0.2.1"
   :depends-on
   (
    "introspect-environment"     ; Wrapper for environment introspection.

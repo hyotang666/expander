@@ -368,14 +368,14 @@
     (:add |flet-expander| flet)
     (:add |labels-expander| labels)
     (:add |lambda-expander| lambda)
-    (:add |the-expander| the return-from)
+    (:add |the-expander| the)
     (:add |unwind-protect-expander| unwind-protect)
     (:add |throw-expander| throw)
     (:add |setq-expander| setq)
     (:add |if-expander| if)
     (:add |locally-expander| locally multiple-value-call multiple-value-prog1
      tagbody progn progv load-time-value catch)
-    (:add |eval-when-expander| eval-when block)))
+    (:add |eval-when-expander| eval-when block return-from)))
 
 ;;;; *EXPANDTABLE*, current expandtable.
 
