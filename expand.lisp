@@ -51,10 +51,6 @@
 
 (in-package :expander)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defmacro prototype (name param-types return-types)
-    `(declaim (ftype (function ,param-types ,return-types) ,name))))
-
 #| DSL |#
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -383,6 +379,8 @@
 
 ;;;; *EXPANDTABLE*, current expandtable.
 
+(declaim (type hash-table *expandtable*))
+
 (defparameter *expandtable* (find-expandtable 'standard))
 
 #| Debug use |#
@@ -415,7 +413,7 @@
 
 ;;;; EXPAND
 
-(prototype expand (t &optional t) t)
+(declaim (ftype (function (t &optional t) (values t &optional)) expand))
 
 (defun expand (form &optional environment)
   (etypecase form
@@ -431,8 +429,10 @@
        (list form) ; it may just data.
        (t (%expand form environment))))))
 
-(prototype expand-symbol-macro
-           ((and symbol (not (or keyword boolean))) &optional t) t)
+(declaim
+ (ftype (function ((and symbol (not (or keyword boolean))) &optional t)
+         (values t &optional))
+        expand-symbol-macro))
 
 (defun expand-symbol-macro (form &optional environment)
   (call-with-macroexpand-check form environment #'%expand))
@@ -450,7 +450,7 @@
 
 ;;; %EXPAND
 
-(prototype %expand (cons &optional t) t)
+(declaim (ftype (function (cons &optional t) (values t &optional)) %expand))
 
 (defun %expand (form &optional environment)
   (funcall (get-expander (car form)) form environment))
