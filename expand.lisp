@@ -6,15 +6,7 @@
 (defpackage :expander
   (:use :cl)
   (:shadow #:macroexpand)
-  (:import-from #.(or #+sbcl
-                      :sb-cltl2
-                      #+ccl
-                      :ccl
-                      (error "~A is not supported."
-                             (lisp-implementation-type)))
-                #:augment-environment
-                #:parse-macro
-                #:enclose)
+  (:import-from :trivial-cltl2 #:augment-environment #:parse-macro #:enclose)
   (:export ; for light users.
            ;; Main api
            #:expand)

@@ -1,10 +1,11 @@
 ; vim: ft=lisp et
 (in-package :asdf)
 (defsystem :expander
-  :version "0.2.1"
+  :version "0.2.2"
   :depends-on
   (
    "introspect-environment"     ; Wrapper for environment introspection.
+   "trivial-cltl2"              ; Wrapper for cltl2 functions.
    "alexandria"                 ; Public domain utilities.
    "lambda-fiddle"              ; Utilities for lambda list parsing.
    "trestrul"                   ; Utilities for tree structured list.
