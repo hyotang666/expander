@@ -72,13 +72,15 @@
 
 (define-condition expander-error (error) ())
 
-(define-condition missing-expandtable (expander-error cell-error) ()
+(define-condition missing-expandtable (expander-error cell-error)
+  ()
   (:report
    (lambda (condition stream)
      (format stream "Expandtable named ~S is not found."
              (cell-error-name condition)))))
 
-(define-condition expander-conflict (expander-error cell-error) ()
+(define-condition expander-conflict (expander-error cell-error)
+  ()
   (:report
    (lambda (condition stream)
      (format stream "Expander conflicts. ~S" (cell-error-name condition)))))
@@ -653,11 +655,10 @@
                      (values nil (nreconc main (cons form rest)))
                      (multiple-value-bind (binds decls prebody let-main)
                          (parse-bubble-let form)
-                       (values
-                         `(let ,binds
-                            ,@decls
-                            ,@prebody)
-                         (nreconc main (cons let-main rest))))))))
+                       (values `(let ,binds
+                                  ,@decls
+                                  ,@prebody)
+                               (nreconc main (cons let-main rest))))))))
     (rec args)))
 
 (defun flatten-nested-op (op args-list &key (args #'cdr))
